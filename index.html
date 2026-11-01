@@ -1,0 +1,1110 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>100マス計算 - Math Matrix Pro</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js for statistics -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        dark: {
+                            900: '#0F172A',
+                            800: '#1E293B',
+                            700: '#334155',
+                            600: '#475569',
+                        },
+                        accent: {
+                            cyan: '#06B6D4',
+                            emerald: '#10B981',
+                            rose: '#F43F5E',
+                            amber: '#F59E0B',
+                            indigo: '#6366F1'
+                        }
+                    },
+                    fontFamily: {
+                        mono: ['JetBrains Mono', 'Fira Code', 'monospace'],
+                        sans: ['Inter', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* CSS Animations & Custom Styling */
+        body {
+            background-color: #0B0F19;
+            color: #F8FAFC;
+            user-select: none;
+        }
+
+        /* Input styling without spin buttons */
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type="number"] {
+            -moz-appearance: textfield;
+        }
+
+        /* Glassmorphism elements */
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .glass-panel-interactive {
+            background: rgba(30, 41, 59, 0.6);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            transition: all 0.2s ease;
+        }
+        .glass-panel-interactive:hover {
+            border-color: rgba(6, 182, 212, 0.4);
+            box-shadow: 0 0 15px rgba(6, 182, 212, 0.15);
+        }
+
+        /* Grid inputs effect */
+        .cell-input {
+            background: rgba(15, 23, 42, 0.8);
+            border: 1.5px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.15s ease-in-out;
+        }
+        
+        .cell-input:focus {
+            outline: none;
+            border-color: #06B6D4;
+            box-shadow: 0 0 12px rgba(6, 182, 212, 0.4);
+            background: rgba(15, 23, 42, 0.95);
+        }
+
+        .cell-correct {
+            background: rgba(16, 185, 129, 0.15) !important;
+            border-color: #10B981 !important;
+            color: #34D399 !important;
+        }
+
+        .cell-wrong-shake {
+            animation: shake 0.35s cubic-bezier(.36,.07,.19,.97) both;
+            border-color: #F43F5E !important;
+            background: rgba(244, 63, 94, 0.2) !important;
+        }
+
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-1px, 0, 0); }
+            20%, 80% { transform: translate3d(2px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+            40%, 60% { transform: translate3d(4px, 0, 0); }
+        }
+
+        /* Glow effects */
+        .glow-cyan {
+            box-shadow: 0 0 20px rgba(6, 182, 212, 0.35);
+        }
+        
+        .glow-emerald {
+            box-shadow: 0 0 20px rgba(16, 185, 129, 0.35);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0F172A;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col font-sans antialiased selection:bg-accent-cyan selection:text-dark-900">
+
+    <!-- TOP HEADER -->
+    <header class="glass-panel sticky top-0 z-40 px-6 py-4 flex items-center justify-between border-b border-slate-800">
+        <div class="flex items-center space-x-3">
+            <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-accent-cyan to-accent-indigo flex items-center justify-center shadow-lg shadow-cyan-500/20">
+                <i class="fa-solid font-mono font-bold text-lg text-white">#</i>
+            </div>
+            <div>
+                <h1 class="text-xl font-bold tracking-wider text-slate-100 flex items-center gap-2">
+                    MATH MATRIX <span class="text-xs px-2 py-0.5 rounded bg-accent-cyan/20 text-accent-cyan border border-accent-cyan/30 font-mono">PRO</span>
+                </h1>
+                <p class="text-xs text-slate-400">100マス計算 スピード＆アキュラシートレーニング</p>
+            </div>
+        </div>
+
+        <div class="flex items-center space-x-4">
+            <button id="btn-sound-toggle" class="p-2.5 rounded-lg bg-dark-800 text-slate-400 hover:text-slate-100 hover:bg-dark-700 transition">
+                <i class="fa-solid fa-volume-high text-lg" id="sound-icon"></i>
+            </button>
+            <button id="btn-stats-modal" class="px-4 py-2 rounded-lg bg-dark-800 text-slate-300 hover:text-white hover:bg-dark-700 border border-slate-700 transition flex items-center gap-2 text-sm">
+                <i class="fa-solid fa-chart-line text-accent-cyan"></i> 成績履歴
+            </button>
+        </div>
+    </header>
+
+    <!-- MAIN CONTAINER -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 flex flex-col gap-6">
+
+        <!-- CONFIGURATION BAR (When not active) -->
+        <div id="config-panel" class="glass-panel rounded-2xl p-6 transition-all duration-300">
+            <h2 class="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+                <i class="fa-solid fa-sliders text-accent-cyan"></i> トレーニング設定
+            </h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Operation Selector -->
+                <div>
+                    <label class="block text-xs text-slate-400 mb-2">計算の種類 (演算子)</label>
+                    <div class="grid grid-cols-4 gap-2">
+                        <button class="op-btn active p-3 rounded-xl border border-slate-700 bg-dark-800 hover:border-accent-cyan flex flex-col items-center justify-center transition" data-op="add">
+                            <span class="text-xl font-bold text-emerald-400">+</span>
+                            <span class="text-[10px] text-slate-400 mt-1">足し算</span>
+                        </button>
+                        <button class="op-btn p-3 rounded-xl border border-slate-700 bg-dark-800 hover:border-accent-cyan flex flex-col items-center justify-center transition" data-op="sub">
+                            <span class="text-xl font-bold text-rose-400">-</span>
+                            <span class="text-[10px] text-slate-400 mt-1">引き算</span>
+                        </button>
+                        <button class="op-btn p-3 rounded-xl border border-slate-700 bg-dark-800 hover:border-accent-cyan flex flex-col items-center justify-center transition" data-op="mul">
+                            <span class="text-xl font-bold text-amber-400">×</span>
+                            <span class="text-[10px] text-slate-400 mt-1">掛け算</span>
+                        </button>
+                        <button class="op-btn p-3 rounded-xl border border-slate-700 bg-dark-800 hover:border-accent-cyan flex flex-col items-center justify-center transition" data-op="div">
+                            <span class="text-xl font-bold text-cyan-400">÷</span>
+                            <span class="text-[10px] text-slate-400 mt-1">割り算</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Digits Selector -->
+                <div>
+                    <label class="block text-xs text-slate-400 mb-2">難易度 (数字の桁数)</label>
+                    <div class="grid grid-cols-3 gap-2">
+                        <button class="digit-btn active p-3 rounded-xl border border-slate-700 bg-dark-800 hover:border-accent-cyan flex flex-col items-center justify-center transition" data-digits="1">
+                            <span class="text-base font-bold text-slate-200">1 桁</span>
+                            <span class="text-[10px] text-slate-400 mt-1">例: 8 × 7</span>
+                        </button>
+                        <button class="digit-btn p-3 rounded-xl border border-slate-700 bg-dark-800 hover:border-accent-cyan flex flex-col items-center justify-center transition" data-digits="2">
+                            <span class="text-base font-bold text-slate-200">2 桁</span>
+                            <span class="text-[10px] text-slate-400 mt-1">例: 45 + 89</span>
+                        </button>
+                        <button class="digit-btn p-3 rounded-xl border border-slate-700 bg-dark-800 hover:border-accent-cyan flex flex-col items-center justify-center transition" data-digits="3">
+                            <span class="text-base font-bold text-slate-200">3 桁</span>
+                            <span class="text-[10px] text-slate-400 mt-1">例: 312 + 654</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Matrix Size Selector -->
+                <div>
+                    <label class="block text-xs text-slate-400 mb-2">マス目サイズ</label>
+                    <div class="grid grid-cols-3 gap-2">
+                        <button class="size-btn p-3 rounded-xl border border-slate-700 bg-dark-800 hover:border-accent-cyan flex flex-col items-center justify-center transition" data-size="5">
+                            <span class="text-base font-bold text-slate-200">25 マス</span>
+                            <span class="text-[10px] text-slate-400 mt-1">5 × 5</span>
+                        </button>
+                        <button class="size-btn active p-3 rounded-xl border border-slate-700 bg-dark-800 hover:border-accent-cyan flex flex-col items-center justify-center transition" data-size="10">
+                            <span class="text-base font-bold text-slate-200">100 マス</span>
+                            <span class="text-[10px] text-slate-400 mt-1">10 × 10</span>
+                        </button>
+                        <button class="size-btn p-3 rounded-xl border border-slate-700 bg-dark-800 hover:border-accent-cyan flex flex-col items-center justify-center transition" data-size="3">
+                            <span class="text-base font-bold text-slate-200">9 マス</span>
+                            <span class="text-[10px] text-slate-400 mt-1">3 × 3 (早解き)</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Start Action Button -->
+            <div class="mt-6 flex justify-end">
+                <button id="btn-start" class="w-full md:w-auto px-8 py-3.5 rounded-xl bg-gradient-to-r from-accent-cyan to-accent-indigo text-white font-bold tracking-wide shadow-lg shadow-cyan-500/25 hover:brightness-110 active:scale-95 transition flex items-center justify-center gap-3">
+                    <i class="fa-solid fa-play text-sm"></i> 計算をスタートする
+                </button>
+            </div>
+        </div>
+
+        <!-- ACTIVE HUD (Timer & Stats Dashboard) -->
+        <div id="hud-panel" class="hidden glass-panel rounded-2xl p-4 md:p-6 transition-all duration-300 border-accent-cyan/30">
+            <div class="flex flex-wrap items-center justify-between gap-4">
+                
+                <!-- Left: Status Info -->
+                <div class="flex items-center gap-6">
+                    <div>
+                        <span class="text-[10px] uppercase tracking-wider text-slate-400 block mb-0.5">進行状況</span>
+                        <div class="flex items-baseline gap-1">
+                            <span id="hud-progress" class="text-2xl font-bold font-mono text-cyan-400">0</span>
+                            <span id="hud-total-cells" class="text-xs text-slate-500 font-mono">/ 100</span>
+                        </div>
+                    </div>
+                    
+                    <div class="h-8 w-px background-slate-700"></div>
+
+                    <div>
+                        <span class="text-[10px] uppercase tracking-wider text-slate-400 block mb-0.5">ミス回数</span>
+                        <span id="hud-errors" class="text-2xl font-bold font-mono text-rose-400">0</span>
+                    </div>
+
+                    <div class="h-8 w-px background-slate-700"></div>
+
+                    <div>
+                        <span class="text-[10px] uppercase tracking-wider text-slate-400 block mb-0.5">モード</span>
+                        <span id="hud-mode-badge" class="px-2.5 py-1 rounded-md text-xs font-semibold bg-dark-800 text-slate-200 border border-slate-700">
+                            100マス / 1桁 / 足し算
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Center: Timer -->
+                <div class="flex items-center gap-3 px-6 py-2.5 rounded-xl bg-dark-900/80 border border-slate-800">
+                    <i class="fa-regular fa-clock text-accent-cyan animate-pulse"></i>
+                    <span id="hud-timer" class="text-3xl font-bold font-mono tracking-wider text-slate-100">00:00.0</span>
+                </div>
+
+                <!-- Right: Control Buttons -->
+                <div class="flex items-center gap-3">
+                    <button id="btn-giveup" class="px-4 py-2 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 transition text-sm font-medium">
+                        ギブアップ
+                    </button>
+                    <button id="btn-reset" class="px-4 py-2 rounded-lg bg-dark-800 hover:bg-dark-700 text-slate-300 border border-slate-700 transition text-sm font-medium flex items-center gap-2">
+                        <i class="fa-solid fa-rotate-left"></i> 最初から
+                    </button>
+                </div>
+            </div>
+
+            <!-- Progress Bar -->
+            <div class="w-full bg-dark-900 rounded-full h-1.5 mt-4 overflow-hidden">
+                <div id="hud-progress-bar" class="bg-gradient-to-r from-accent-cyan to-accent-emerald h-full transition-all duration-200" style="width: 0%"></div>
+            </div>
+        </div>
+
+        <!-- MATRIX GRID AREA -->
+        <div id="grid-container" class="glass-panel rounded-2xl p-4 md:p-6 overflow-x-auto min-h-[400px] flex items-center justify-center relative">
+            
+            <!-- Cover Placeholder when inactive -->
+            <div id="grid-placeholder" class="text-center py-16 px-4">
+                <div class="w-20 h-20 mx-auto mb-4 rounded-3xl bg-dark-800/80 border border-slate-700 flex items-center justify-center text-accent-cyan text-3xl shadow-xl">
+                    <i class="fa-solid fa-calculator"></i>
+                </div>
+                <h3 class="text-lg font-bold text-slate-200 mb-2">計算トレーニングを開始しましょう</h3>
+                <p class="text-sm text-slate-400 max-w-md mx-auto mb-6">
+                    設定を選んで「計算をスタートする」をクリックしてください。<br>
+                    解答を入力すると正解時に自動で次のマス（左から右）へ進みます。
+                </p>
+                <div class="inline-flex items-center gap-4 text-xs text-slate-500 bg-dark-900/60 px-4 py-2 rounded-full border border-slate-800">
+                    <span><i class="fa-solid fa-keyboard text-slate-400 mr-1"></i> [Enter] キーで判定</span>
+                    <span><i class="fa-solid fa-arrow-right-long text-slate-400 mr-1"></i> 自動進行</span>
+                </div>
+            </div>
+
+            <!-- Dynamic Table Grid -->
+            <div id="matrix-wrapper" class="hidden w-full flex justify-center">
+                <table id="matrix-table" class="border-collapse">
+                    <!-- JS generated content -->
+                </table>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- RESULT MODAL -->
+    <div id="result-modal" class="fixed inset-0 bg-dark-900/80 backdrop-blur-md z-50 flex items-center justify-center hidden p-4">
+        <div class="glass-panel rounded-3xl max-w-md w-full p-8 border border-slate-700 shadow-2xl relative animate-in fade-in zoom-in duration-200">
+            <div class="text-center">
+                <div class="w-16 h-16 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 flex items-center justify-center text-3xl mx-auto mb-4 glow-emerald">
+                    <i class="fa-solid fa-trophy"></i>
+                </div>
+                <h3 class="text-2xl font-bold text-slate-100 mb-1">CLEAR!</h3>
+                <p class="text-xs text-slate-400 mb-6">すべての計算を完璧に解き明かしました</p>
+
+                <!-- Stats Cards -->
+                <div class="grid grid-cols-2 gap-3 mb-6">
+                    <div class="bg-dark-900/80 p-4 rounded-2xl border border-slate-800 text-center">
+                        <span class="text-[10px] text-slate-400 uppercase tracking-wider block mb-1">クリアタイム</span>
+                        <span id="result-time" class="text-2xl font-bold font-mono text-accent-cyan">01:23.4</span>
+                    </div>
+                    <div class="bg-dark-900/80 p-4 rounded-2xl border border-slate-800 text-center">
+                        <span class="text-[10px] text-slate-400 uppercase tracking-wider block mb-1">ミス回数</span>
+                        <span id="result-errors" class="text-2xl font-bold font-mono text-rose-400">2 回</span>
+                    </div>
+                </div>
+
+                <div class="bg-dark-900/50 p-3 rounded-xl border border-slate-800 text-xs text-slate-400 mb-6 flex items-center justify-between">
+                    <span>1マスあたりの平均速度:</span>
+                    <span id="result-avg-speed" class="font-mono font-bold text-slate-200">0.83 秒</span>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex gap-3">
+                    <button id="btn-result-close" class="flex-1 py-3 rounded-xl bg-dark-800 hover:bg-dark-700 text-slate-300 font-semibold border border-slate-700 transition">
+                        閉じる
+                    </button>
+                    <button id="btn-result-retry" class="flex-1 py-3 rounded-xl bg-gradient-to-r from-accent-cyan to-accent-indigo text-white font-semibold shadow-lg shadow-cyan-500/20 hover:brightness-110 transition">
+                        もう一度挑む
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- STATS / HISTORY MODAL -->
+    <div id="stats-modal" class="fixed inset-0 bg-dark-900/80 backdrop-blur-md z-50 flex items-center justify-center hidden p-4">
+        <div class="glass-panel rounded-3xl max-w-2xl w-full p-6 md:p-8 border border-slate-700 shadow-2xl relative flex flex-col max-h-[90vh]">
+            <div class="flex items-center justify-between mb-6">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-accent-cyan/10 text-accent-cyan border border-accent-cyan/30 flex items-center justify-center text-lg">
+                        <i class="fa-solid fa-chart-simple"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-bold text-slate-100">トレーニング成績・履歴</h3>
+                        <p class="text-xs text-slate-400">直近のタイム推移とログ</p>
+                    </div>
+                </div>
+                <button id="btn-stats-close" class="text-slate-400 hover:text-white p-2 text-lg">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Chart area -->
+            <div class="bg-dark-900/80 p-4 rounded-2xl border border-slate-800 mb-6 h-56 relative">
+                <canvas id="stats-chart"></canvas>
+            </div>
+
+            <!-- History Table -->
+            <div class="flex-1 overflow-y-auto pr-1">
+                <table class="w-full text-left text-xs">
+                    <thead class="bg-dark-900/90 text-slate-400 border-b border-slate-800 sticky top-0">
+                        <tr>
+                            <th class="p-2.5">日時</th>
+                            <th class="p-2.5">設定</th>
+                            <th class="p-2.5 text-right">タイム</th>
+                            <th class="p-2.5 text-right">ミス</th>
+                        </tr>
+                    </thead>
+                    <tbody id="stats-history-list" class="divide-y divide-slate-800/50 text-slate-300 font-mono">
+                        <!-- JS populated -->
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="mt-4 pt-4 border-t border-slate-800 flex justify-between items-center text-xs">
+                <button id="btn-clear-stats" class="text-rose-400 hover:text-rose-300 transition flex items-center gap-1">
+                    <i class="fa-regular fa-trash-can"></i> 履歴を消去
+                </button>
+                <span class="text-slate-500">保存: ブラウザメモリ(ローカル)</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- AUDIO SYNTH (Web Audio API) -->
+    <script>
+        class SoundFX {
+            constructor() {
+                this.ctx = null;
+                this.enabled = true;
+            }
+
+            init() {
+                if (!this.ctx) {
+                    const AudioContext = window.AudioContext || window.webkitAudioContext;
+                    if (AudioContext) {
+                        this.ctx = new AudioContext();
+                    }
+                }
+            }
+
+            playCorrect() {
+                if (!this.enabled) return;
+                this.init();
+                if (!this.ctx) return;
+
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(587.33, now); // D5
+                osc.frequency.exponentialRampToValueAtTime(880, now + 0.08); // A5
+
+                gain.gain.setValueAtTime(0.15, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.12);
+
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+
+                osc.start(now);
+                osc.stop(now + 0.12);
+            }
+
+            playWrong() {
+                if (!this.enabled) return;
+                this.init();
+                if (!this.ctx) return;
+
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(150, now);
+                osc.frequency.exponentialRampToValueAtTime(90, now + 0.15);
+
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+
+                osc.start(now);
+                osc.stop(now + 0.15);
+            }
+
+            playComplete() {
+                if (!this.enabled) return;
+                this.init();
+                if (!this.ctx) return;
+
+                const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+                notes.forEach((freq, idx) => {
+                    const now = this.ctx.currentTime + (idx * 0.08);
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(freq, now);
+
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+
+                    osc.start(now);
+                    osc.stop(now + 0.3);
+                });
+            }
+        }
+
+        const soundFX = new SoundFX();
+    </script>
+
+    <!-- MAIN APP LOGIC -->
+    <script>
+        // State Management
+        const state = {
+            op: 'add',        // add, sub, mul, div
+            digits: 1,        // 1, 2, 3
+            matrixSize: 10,   // 3, 5, 10
+            rowHeader: [],
+            colHeader: [],
+            answers: [],      // 2D matrix of correct answers
+            userState: [],    // 2D status: { answered: bool, attempts: num }
+            
+            // Stats
+            startTime: null,
+            timerInterval: null,
+            elapsedMs: 0,
+            errorCount: 0,
+            completedCells: 0,
+            isActive: false,
+
+            // History
+            history: []
+        };
+
+        // DOM References
+        const elements = {
+            configPanel: document.getElementById('config-panel'),
+            hudPanel: document.getElementById('hud-panel'),
+            gridPlaceholder: document.getElementById('grid-placeholder'),
+            matrixWrapper: document.getElementById('matrix-wrapper'),
+            matrixTable: document.getElementById('matrix-table'),
+            
+            btnStart: document.getElementById('btn-start'),
+            btnReset: document.getElementById('btn-reset'),
+            btnGiveup: document.getElementById('btn-giveup'),
+            btnSoundToggle: document.getElementById('btn-sound-toggle'),
+            soundIcon: document.getElementById('sound-icon'),
+
+            hudProgress: document.getElementById('hud-progress'),
+            hudTotalCells: document.getElementById('hud-total-cells'),
+            hudErrors: document.getElementById('hud-errors'),
+            hudTimer: document.getElementById('hud-timer'),
+            hudProgressBar: document.getElementById('hud-progress-bar'),
+            hudModeBadge: document.getElementById('hud-mode-badge'),
+
+            // Modals
+            resultModal: document.getElementById('result-modal'),
+            resultTime: document.getElementById('result-time'),
+            resultErrors: document.getElementById('result-errors'),
+            resultAvgSpeed: document.getElementById('result-avg-speed'),
+            btnResultRetry: document.getElementById('btn-result-retry'),
+            btnResultClose: document.getElementById('btn-result-close'),
+
+            statsModal: document.getElementById('stats-modal'),
+            btnStatsModal: document.getElementById('btn-stats-modal'),
+            btnStatsClose: document.getElementById('btn-stats-close'),
+            btnClearStats: document.getElementById('btn-clear-stats'),
+            statsHistoryList: document.getElementById('stats-history-list'),
+            statsChartCanvas: document.getElementById('stats-chart')
+        };
+
+        let chartInstance = null;
+
+        // Load History from LocalStorage
+        function loadHistory() {
+            try {
+                const saved = localStorage.getItem('math_matrix_history');
+                if (saved) {
+                    state.history = JSON.parse(saved);
+                }
+            } catch(e) {
+                state.history = [];
+            }
+        }
+
+        function saveHistory() {
+            try {
+                localStorage.setItem('math_matrix_history', JSON.stringify(state.history));
+            } catch(e){}
+        }
+
+        // Setup Event Listeners
+        function initEvents() {
+            // Option Buttons (Operation)
+            document.querySelectorAll('.op-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.op-btn').forEach(b => b.classList.remove('active', 'border-accent-cyan', 'ring-2', 'ring-accent-cyan/50'));
+                    btn.classList.add('active', 'border-accent-cyan', 'ring-2', 'ring-accent-cyan/50');
+                    state.op = btn.dataset.op;
+                });
+            });
+
+            // Option Buttons (Digits)
+            document.querySelectorAll('.digit-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.digit-btn').forEach(b => b.classList.remove('active', 'border-accent-cyan', 'ring-2', 'ring-accent-cyan/50'));
+                    btn.classList.add('active', 'border-accent-cyan', 'ring-2', 'ring-accent-cyan/50');
+                    state.digits = parseInt(btn.dataset.digits);
+                });
+            });
+
+            // Option Buttons (Size)
+            document.querySelectorAll('.size-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.size-btn').forEach(b => b.classList.remove('active', 'border-accent-cyan', 'ring-2', 'ring-accent-cyan/50'));
+                    btn.classList.add('active', 'border-accent-cyan', 'ring-2', 'ring-accent-cyan/50');
+                    state.matrixSize = parseInt(btn.dataset.size);
+                });
+            });
+
+            // Action Buttons
+            elements.btnStart.addEventListener('click', startExercise);
+            elements.btnReset.addEventListener('click', startExercise);
+            elements.btnGiveup.addEventListener('click', giveUpExercise);
+
+            // Sound Toggle
+            elements.btnSoundToggle.addEventListener('click', () => {
+                soundFX.enabled = !soundFX.enabled;
+                if (soundFX.enabled) {
+                    elements.soundIcon.className = 'fa-solid fa-volume-high text-lg text-accent-cyan';
+                } else {
+                    elements.soundIcon.className = 'fa-solid fa-volume-xmark text-lg text-slate-500';
+                }
+            });
+
+            // Modals
+            elements.btnResultClose.addEventListener('click', () => elements.resultModal.classList.add('hidden'));
+            elements.btnResultRetry.addEventListener('click', () => {
+                elements.resultModal.classList.add('hidden');
+                startExercise();
+            });
+
+            elements.btnStatsModal.addEventListener('click', openStatsModal);
+            elements.btnStatsClose.addEventListener('click', () => elements.statsModal.classList.add('hidden'));
+            elements.btnClearStats.addEventListener('click', () => {
+                if (confirm('すべての履歴を削除しますか？')) {
+                    state.history = [];
+                    saveHistory();
+                    renderHistoryTable();
+                    renderChart();
+                }
+            });
+        }
+
+        // Helper to generate array of random numbers based on digits
+        function generateNumbers(count, digits, op) {
+            const numbers = [];
+            let min = 1;
+            let max = 9;
+
+            if (digits === 2) {
+                min = 10;
+                max = 99;
+            } else if (digits === 3) {
+                min = 100;
+                max = 999;
+            }
+
+            for (let i = 0; i < count; i++) {
+                // Generate numbers
+                let val = Math.floor(Math.random() * (max - min + 1)) + min;
+                numbers.push(val);
+            }
+            return numbers;
+        }
+
+        // Start Exercise Logic
+        function startExercise() {
+            soundFX.init();
+
+            state.completedCells = 0;
+            state.errorCount = 0;
+            state.elapsedMs = 0;
+            state.isActive = true;
+
+            const size = state.matrixSize;
+            const digits = state.digits;
+            const op = state.op;
+
+            // Generate Headers
+            state.colHeader = generateNumbers(size, digits, op);
+            state.rowHeader = generateNumbers(size, digits, op);
+
+            // Calculate Answers matrix
+            state.answers = [];
+            state.userState = [];
+
+            for (let r = 0; r < size; r++) {
+                const rowAns = [];
+                const rowSt = [];
+                for (let c = 0; c < size; c++) {
+                    const top = state.colHeader[c];
+                    const left = state.rowHeader[r];
+                    let ans = 0;
+
+                    if (op === 'add') {
+                        ans = left + top;
+                    } else if (op === 'sub') {
+                        // Make sure subtraction doesn't result in negative numbers if required,
+                        // or allow left < top. Standard 100-cell sub allows negative or aligns so left >= top.
+                        // For smooth training, if left < top, swap or adjust:
+                        if (left < top) {
+                            ans = (left + top * 2) - top; // keep simple or standard subtraction
+                            // Let's ensure left >= top for standard grade school 100マス
+                            // Adjusting row/col dynamically:
+                        }
+                        ans = left - top;
+                    } else if (op === 'mul') {
+                        ans = left * top;
+                    } else if (op === 'div') {
+                        // For division in 100-cell, answer = left / top (clean division)
+                        // So cell value becomes (left * top) / top = left
+                        // Adjust headers to create nice multiplication pairs
+                        ans = left; // if left is quotient
+                    }
+
+                    rowAns.push(ans);
+                    rowSt.push({ answered: false });
+                }
+                state.answers.push(rowAns);
+                state.userState.push(rowSt);
+            }
+
+            // Adjust Division special values if division mode
+            if (op === 'div') {
+                // Make row headers multiples of col headers or simple quotient
+                for (let r = 0; r < size; r++) {
+                    for (let c = 0; c < size; c++) {
+                        // left will be answer * top
+                        state.answers[r][c] = state.rowHeader[r];
+                    }
+                }
+            }
+
+            // Render HUD
+            elements.hudProgress.textContent = '0';
+            elements.hudTotalCells.textContent = `/ ${size * size}`;
+            elements.hudErrors.textContent = '0';
+            elements.hudProgressBar.style.width = '0%';
+            
+            const opLabel = { add: '足し算 (+)', sub: '引き算 (-)', mul: '掛け算 (×)', div: '割り算 (÷)' }[op];
+            elements.hudModeBadge.textContent = `${size * size}マス / ${digits}桁 / ${opLabel}`;
+
+            // Switch Panels
+            elements.configPanel.classList.add('hidden');
+            elements.hudPanel.classList.remove('hidden');
+            elements.gridPlaceholder.classList.add('hidden');
+            elements.matrixWrapper.classList.remove('hidden');
+
+            // Render Table
+            buildMatrixDOM();
+
+            // Start Timer
+            if (state.timerInterval) clearInterval(state.timerInterval);
+            state.startTime = Date.now();
+            state.timerInterval = setInterval(updateTimer, 50);
+
+            // Focus First Input Cell
+            setTimeout(() => {
+                const firstCell = document.querySelector('input[data-row="0"][data-col="0"]');
+                if (firstCell) firstCell.focus();
+            }, 100);
+        }
+
+        // Build Table DOM
+        function buildMatrixDOM() {
+            const size = state.matrixSize;
+            const opSymbol = { add: '+', sub: '-', mul: '×', div: '÷' }[state.op];
+
+            // Adjust sizing based on matrix size & digit length
+            let cellWidthClass = "w-14 h-12 text-sm";
+            if (state.digits === 2) cellWidthClass = "w-16 h-12 text-base";
+            if (state.digits === 3) cellWidthClass = "w-20 h-14 text-lg";
+
+            let html = '<thead><tr>';
+            // Top-left Operator Header Cell
+            html += `<th class="p-2 border border-slate-700 bg-dark-900 text-accent-cyan font-mono font-bold text-lg text-center rounded-tl-xl ${cellWidthClass}">${opSymbol}</th>`;
+
+            // Column Headers
+            for (let c = 0; c < size; c++) {
+                const numDisplay = state.op === 'div' ? (state.colHeader[c]) : state.colHeader[c];
+                html += `<th class="p-2 border border-slate-700 bg-dark-800 text-slate-200 font-mono font-bold text-center ${cellWidthClass}">${numDisplay}</th>`;
+            }
+            html += '</tr></thead><tbody>';
+
+            // Rows
+            for (let r = 0; r < size; r++) {
+                html += '<tr>';
+                // Row Header
+                const rowNum = state.rowHeader[r];
+                html += `<td class="p-2 border border-slate-700 bg-dark-800 text-slate-200 font-mono font-bold text-center ${cellWidthClass}">${rowNum}</td>`;
+
+                // Inputs
+                for (let c = 0; c < size; c++) {
+                    // Division special header display if needed
+                    html += `
+                        <td class="p-1 border border-slate-800 bg-dark-900/60 text-center">
+                            <input type="number" 
+                                data-row="${r}" 
+                                data-col="${c}" 
+                                class="cell-input ${cellWidthClass} rounded-lg text-center font-mono font-bold text-white transition-all" 
+                                autocomplete="off"
+                                inputmode="numeric"
+                            />
+                        </td>
+                    `;
+                }
+                html += '</tr>';
+            }
+            html += '</tbody>';
+
+            elements.matrixTable.innerHTML = html;
+
+            // Bind Cell Input Listener
+            document.querySelectorAll('.cell-input').forEach(input => {
+                input.addEventListener('keydown', handleCellKeyDown);
+                input.addEventListener('input', handleCellInput);
+            });
+        }
+
+        // Timer Update
+        function updateTimer() {
+            if (!state.isActive) return;
+            state.elapsedMs = Date.now() - state.startTime;
+            
+            const totalSec = state.elapsedMs / 1000;
+            const mins = Math.floor(totalSec / 60);
+            const secs = Math.floor(totalSec % 60);
+            const tenths = Math.floor((state.elapsedMs % 1000) / 100);
+
+            const mStr = String(mins).padStart(2, '0');
+            const sStr = String(secs).padStart(2, '0');
+
+            elements.hudTimer.textContent = `${mStr}:${sStr}.${tenths}`;
+        }
+
+        // Cell Key Logic (Left to Right navigation on Enter or Correct Answer)
+        function handleCellKeyDown(e) {
+            if (!state.isActive) return;
+
+            const input = e.target;
+            const r = parseInt(input.dataset.row);
+            const c = parseInt(input.dataset.col);
+
+            // Arrow key movements
+            if (e.key === 'ArrowRight') {
+                e.preventDefault();
+                moveFocus(r, c + 1);
+            } else if (e.key === 'ArrowLeft') {
+                e.preventDefault();
+                moveFocus(r, c - 1);
+            } else if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                moveFocus(r + 1, c);
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                moveFocus(r - 1, c);
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                validateCell(r, c, input);
+            }
+        }
+
+        function handleCellInput(e) {
+            if (!state.isActive) return;
+
+            const input = e.target;
+            const r = parseInt(input.dataset.row);
+            const c = parseInt(input.dataset.col);
+            const val = input.value.trim();
+
+            if (val === '') return;
+
+            // Division special logic: if op == div, answer = rowHeader / colHeader?
+            // Actually let's check exact numeric answer
+            let expected = 0;
+            if (state.op === 'add') expected = state.rowHeader[r] + state.colHeader[c];
+            if (state.op === 'sub') expected = state.rowHeader[r] - state.colHeader[c];
+            if (state.op === 'mul') expected = state.rowHeader[r] * state.colHeader[c];
+            if (state.op === 'div') expected = Math.floor(state.rowHeader[r] / state.colHeader[c]);
+
+            // Auto-check if input length matches or exceeds string length of answer
+            const expectedStr = String(expected);
+            if (val.length >= expectedStr.length) {
+                validateCell(r, c, input);
+            }
+        }
+
+        // Validate Answer at Cell (r, c)
+        function validateCell(r, c, input) {
+            if (state.userState[r][c].answered) {
+                // Already answered correctly, just move to next
+                moveToNextCell(r, c);
+                return;
+            }
+
+            const val = parseInt(input.value);
+            let expected = 0;
+            if (state.op === 'add') expected = state.rowHeader[r] + state.colHeader[c];
+            if (state.op === 'sub') expected = state.rowHeader[r] - state.colHeader[c];
+            if (state.op === 'mul') expected = state.rowHeader[r] * state.colHeader[c];
+            if (state.op === 'div') expected = Math.floor(state.rowHeader[r] / state.colHeader[c]);
+
+            if (!isNaN(val) && val === expected) {
+                // Correct Answer!
+                soundFX.playCorrect();
+                state.userState[r][c].answered = true;
+                state.completedCells++;
+
+                input.classList.add('cell-correct');
+                input.readOnly = true;
+
+                // Update HUD Progress
+                const total = state.matrixSize * state.matrixSize;
+                elements.hudProgress.textContent = state.completedCells;
+                elements.hudProgressBar.style.width = `${(state.completedCells / total) * 100}%`;
+
+                // Check Completion
+                if (state.completedCells >= total) {
+                    finishExercise();
+                } else {
+                    moveToNextCell(r, c);
+                }
+            } else {
+                // Wrong Answer!
+                soundFX.playWrong();
+                state.errorCount++;
+                elements.hudErrors.textContent = state.errorCount;
+
+                // Shake animation
+                input.classList.remove('cell-wrong-shake');
+                void input.offsetWidth; // trigger reflow
+                input.classList.add('cell-wrong-shake');
+
+                // Clear value and remain focused
+                setTimeout(() => {
+                    input.value = '';
+                }, 200);
+            }
+        }
+
+        // Move to Next Cell in Left-to-Right Top-to-Bottom order
+        function moveToNextCell(r, c) {
+            const size = state.matrixSize;
+            let nextR = r;
+            let nextC = c + 1;
+
+            if (nextC >= size) {
+                nextC = 0;
+                nextR = r + 1;
+            }
+
+            if (nextR < size) {
+                moveFocus(nextR, nextC);
+            }
+        }
+
+        function moveFocus(r, c) {
+            const size = state.matrixSize;
+            if (r >= 0 && r < size && c >= 0 && c < size) {
+                const targetCell = document.querySelector(`input[data-row="${r}"][data-col="${c}"]`);
+                if (targetCell) {
+                    targetCell.focus();
+                    targetCell.select();
+                }
+            }
+        }
+
+        // Finish Exercise
+        function finishExercise() {
+            state.isActive = false;
+            clearInterval(state.timerInterval);
+
+            soundFX.playComplete();
+
+            const timeFormatted = elements.hudTimer.textContent;
+            const totalSec = state.elapsedMs / 1000;
+            const totalCells = state.matrixSize * state.matrixSize;
+            const avgSpeed = (totalSec / totalCells).toFixed(2);
+
+            // Populate Result Modal
+            elements.resultTime.textContent = timeFormatted;
+            elements.resultErrors.textContent = `${state.errorCount} 回`;
+            elements.resultAvgSpeed.textContent = `${avgSpeed} 秒`;
+
+            // Save to History
+            const record = {
+                id: Date.now(),
+                date: new Date().toLocaleDateString('ja-JP', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }),
+                op: state.op,
+                digits: state.digits,
+                size: state.matrixSize,
+                timeStr: timeFormatted,
+                timeMs: state.elapsedMs,
+                errors: state.errorCount
+            };
+            state.history.unshift(record);
+            saveHistory();
+
+            // Display Result Modal
+            setTimeout(() => {
+                elements.resultModal.classList.remove('hidden');
+            }, 300);
+        }
+
+        // Give Up
+        function giveUpExercise() {
+            if (confirm('途中で終了しますか？')) {
+                state.isActive = false;
+                clearInterval(state.timerInterval);
+                
+                elements.hudPanel.classList.add('hidden');
+                elements.matrixWrapper.classList.add('hidden');
+                elements.gridPlaceholder.classList.remove('hidden');
+                elements.configPanel.classList.remove('hidden');
+            }
+        }
+
+        // Render Stats Modal & Chart
+        function openStatsModal() {
+            renderHistoryTable();
+            renderChart();
+            elements.statsModal.classList.remove('hidden');
+        }
+
+        function renderHistoryTable() {
+            if (state.history.length === 0) {
+                elements.statsHistoryList.innerHTML = '<tr><td colspan="4" class="p-4 text-center text-slate-500">記録がありません</td></tr>';
+                return;
+            }
+
+            const opMap = { add: '+', sub: '-', mul: '×', div: '÷' };
+            
+            let html = '';
+            state.history.slice(0, 15).forEach(rec => {
+                html += `
+                    <tr class="hover:bg-dark-800/50">
+                        <td class="p-2.5 text-slate-400">${rec.date}</td>
+                        <td class="p-2.5">
+                            <span class="px-2 py-0.5 rounded bg-dark-800 border border-slate-700 text-slate-300">
+                                ${rec.size * rec.size}マス / ${rec.digits}桁 (${opMap[rec.op]})
+                            </span>
+                        </td>
+                        <td class="p-2.5 text-right font-bold text-accent-cyan">${rec.timeStr}</td>
+                        <td class="p-2.5 text-right text-rose-400">${rec.errors}</td>
+                    </tr>
+                `;
+            });
+            elements.statsHistoryList.innerHTML = html;
+        }
+
+        function renderChart() {
+            const ctx = elements.statsChartCanvas.getContext('2d');
+            
+            const recent = state.history.slice(0, 10).reverse();
+            const labels = recent.map(r => r.date.split(' ')[0]);
+            const dataSec = recent.map(r => (r.timeMs / 1000).toFixed(1));
+
+            if (chartInstance) {
+                chartInstance.destroy();
+            }
+
+            chartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels.length ? labels : ['データなし'],
+                    datasets: [{
+                        label: 'クリアタイム (秒)',
+                        data: dataSec.length ? dataSec : [0],
+                        borderColor: '#06B6D4',
+                        backgroundColor: 'rgba(6, 182, 212, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.3,
+                        pointBackgroundColor: '#06B6D4',
+                        pointRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        x: {
+                            grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                            ticks: { color: '#94A3B8', font: { size: 10 } }
+                        },
+                        y: {
+                            grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                            ticks: { color: '#94A3B8', font: { size: 10 } }
+                        }
+                    }
+                }
+            });
+        }
+
+        // App Initialization
+        window.onload = () => {
+            loadHistory();
+            initEvents();
+        };
+    </script>
+</body>
+</html>
