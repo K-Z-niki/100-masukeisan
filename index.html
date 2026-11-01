@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>エンハンスド１００計算</title>
+    <title>エンハンスド100マス計算</title>
     <!-- Google Fonts: Noto Serif JP for crafting / premium look -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -132,7 +132,7 @@
             </div>
             <div>
                 <h1 class="text-xl md:text-2xl font-black tracking-widest text-rydeen-text gold-text-glow uppercase">
-                    エンハンスド１００計算
+                    エンハンスド100マス計算
                 </h1>
                 <p class="text-[10px] md:text-xs text-rydeen-gold_dim tracking-[0.2em] uppercase mt-0.5">Premium Math Matrix</p>
             </div>
@@ -471,11 +471,13 @@
                     const AudioContext = window.AudioContext || window.webkitAudioContext;
                     if (AudioContext) {
                         this.ctx = new AudioContext();
-                        this.startBGM(); // Start BGM on first user interaction
                     }
                 } else if (this.ctx.state === 'suspended') {
                     this.ctx.resume();
                 }
+                
+                // 再生が止まっている場合は確実に再生を試みる（ブラウザブロック対策）
+                this.startBGM(); 
             }
 
             startBGM() {
@@ -1345,7 +1347,7 @@
 
             // ブラウザの自動再生ブロック対策: ユーザーが画面のどこかをクリック/キー入力した瞬間にBGMを確実に再生開始する
             const unlockAudio = () => {
-                soundFX.startBGM();
+                soundFX.init();
                 document.removeEventListener('click', unlockAudio);
                 document.removeEventListener('keydown', unlockAudio);
                 document.removeEventListener('touchstart', unlockAudio);
