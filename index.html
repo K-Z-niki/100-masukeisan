@@ -109,6 +109,14 @@
         .gold-text-glow {
             text-shadow: 0 0 15px rgba(212, 175, 55, 0.4);
         }
+
+        .hide-scroll::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scroll {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
     </style>
 </head>
 <body class="min-h-screen flex flex-col font-serif antialiased">
@@ -164,26 +172,26 @@
                 <!-- Operation Selector -->
                 <div class="lg:col-span-1">
                     <label class="block text-xs tracking-wider text-rydeen-muted mb-3 uppercase">計算式</label>
-                    <div class="grid grid-cols-2 gap-3">
-                        <button class="op-btn active p-3 border border-rydeen-gold bg-rydeen-surface_light text-rydeen-gold flex flex-col items-center justify-center transition" data-op="add">
-                            <span class="text-xl font-bold font-mono">+</span>
-                            <span class="text-[10px] mt-1 tracking-widest">足し算</span>
+                    <div class="grid grid-cols-2 lg:grid-cols-5 gap-2">
+                        <button class="op-btn active p-2 border border-rydeen-gold bg-rydeen-surface_light text-rydeen-gold flex flex-col items-center justify-center transition" data-op="add">
+                            <span class="text-lg font-bold font-mono">+</span>
+                            <span class="text-[9px] mt-1 tracking-widest whitespace-nowrap">足し算</span>
                         </button>
-                        <button class="op-btn p-3 border border-rydeen-border bg-rydeen-surface hover:border-rydeen-gold/50 text-rydeen-muted flex flex-col items-center justify-center transition" data-op="sub">
-                            <span class="text-xl font-bold font-mono">-</span>
-                            <span class="text-[10px] mt-1 tracking-widest">引き算</span>
+                        <button class="op-btn p-2 border border-rydeen-border bg-rydeen-surface hover:border-rydeen-gold/50 text-rydeen-muted flex flex-col items-center justify-center transition" data-op="sub">
+                            <span class="text-lg font-bold font-mono">-</span>
+                            <span class="text-[9px] mt-1 tracking-widest whitespace-nowrap">引き算</span>
                         </button>
-                        <button class="op-btn p-3 border border-rydeen-border bg-rydeen-surface hover:border-rydeen-gold/50 text-rydeen-muted flex flex-col items-center justify-center transition" data-op="mul">
-                            <span class="text-xl font-bold font-mono">×</span>
-                            <span class="text-[10px] mt-1 tracking-widest">掛け算</span>
+                        <button class="op-btn p-2 border border-rydeen-border bg-rydeen-surface hover:border-rydeen-gold/50 text-rydeen-muted flex flex-col items-center justify-center transition" data-op="mul">
+                            <span class="text-lg font-bold font-mono">×</span>
+                            <span class="text-[9px] mt-1 tracking-widest whitespace-nowrap">掛け算</span>
                         </button>
-                        <button class="op-btn p-3 border border-rydeen-border bg-rydeen-surface hover:border-rydeen-gold/50 text-rydeen-muted flex flex-col items-center justify-center transition" data-op="div_int">
-                            <span class="text-xl font-bold font-mono">÷</span>
-                            <span class="text-[10px] mt-1 tracking-widest">割算 (整)</span>
+                        <button class="op-btn p-2 border border-rydeen-border bg-rydeen-surface hover:border-rydeen-gold/50 text-rydeen-muted flex flex-col items-center justify-center transition" data-op="div_exact">
+                            <span class="text-lg font-bold font-mono">÷</span>
+                            <span class="text-[9px] mt-1 tracking-widest whitespace-nowrap">割算(整)</span>
                         </button>
-                        <button class="op-btn col-span-2 p-3 border border-rydeen-border bg-rydeen-surface hover:border-rydeen-gold/50 text-rydeen-muted flex flex-col items-center justify-center transition" data-op="div_float">
-                            <span class="text-xl font-bold font-mono">÷ 小数</span>
-                            <span class="text-[10px] mt-1 tracking-widest">割算 (小数点を省いて入力)</span>
+                        <button class="op-btn p-2 border border-rydeen-border bg-rydeen-surface hover:border-rydeen-gold/50 text-rydeen-muted flex flex-col items-center justify-center transition" data-op="div_float">
+                            <span class="text-lg font-bold font-mono">÷.</span>
+                            <span class="text-[9px] mt-1 tracking-widest whitespace-nowrap">割算(小)</span>
                         </button>
                     </div>
                 </div>
@@ -267,7 +275,6 @@
                             100マス / 1桁 / 足し算
                         </span>
                         <span id="hud-hint-badge" class="hidden px-2 py-1 ml-2 bg-rydeen-surface_light text-[10px] tracking-wider text-rydeen-gold border border-rydeen-gold/30">
-                            ※割切れない場合は小数第2位までを小数点なしで入力 (例: 025)
                         </span>
                     </div>
                 </div>
@@ -308,14 +315,10 @@
                     「鍛錬を開始す」ボタンを押して挑んでください。
                 </p>
                 <div class="bg-rydeen-surface_light border border-rydeen-border p-3 mb-8 max-w-md mx-auto text-left">
-                    <p class="text-[10px] text-rydeen-gold tracking-widest mb-2"><i class="fa-solid fa-circle-info"></i> 割算 (小数) について</p>
+                    <p class="text-[10px] text-rydeen-gold tracking-widest mb-2"><i class="fa-solid fa-circle-info"></i> 割り算の仕様</p>
                     <p class="text-xs text-rydeen-muted tracking-wide leading-relaxed">
-                        <strong class="text-rydeen-text">割り切れる場合：</strong>そのまま整数を入力<br>
-                        例: 9 ÷ 1 = 9 ➔ <span class="font-mono text-rydeen-gold bg-rydeen-bg px-1 border border-rydeen-border">9</span><br>
-                        <strong class="text-rydeen-text mt-1 block">割り切れない場合：</strong>小数第2位まで(四捨五入)の数字を<strong>小数点を打たずに</strong>入力<br>
-                        例: 1 ÷ 3 = 0.333... ➔ <span class="font-mono text-rydeen-gold bg-rydeen-bg px-1 border border-rydeen-border">033</span><br>
-                        例: 1 ÷ 4 = 0.25 ➔ <span class="font-mono text-rydeen-gold bg-rydeen-bg px-1 border border-rydeen-border">025</span><br>
-                        例: 1 ÷ 2 = 0.5 ➔ <span class="font-mono text-rydeen-gold bg-rydeen-bg px-1 border border-rydeen-border">05</span>
+                        <strong class="text-rydeen-gold">割算(整):</strong> すべてのマスが完全に割り切れるように問題が自動生成されます。<br>
+                        <strong class="text-rydeen-gold mt-1 block">割算(小):</strong> 割り切れない場合は、小数第2位を四捨五入し、小数点を除いて入力します。（例: <span class="text-rydeen-text">0.25</span> → <span class="text-rydeen-text">025</span>）
                     </p>
                 </div>
                 <div class="inline-flex items-center gap-6 text-xs text-rydeen-gold bg-rydeen-bg px-6 py-3 border border-rydeen-border tracking-widest">
@@ -397,14 +400,14 @@
     <!-- STATS / HISTORY MODAL -->
     <div id="stats-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
         <div class="bg-rydeen-surface border border-rydeen-border max-w-3xl w-full p-6 md:p-8 shadow-2xl relative flex flex-col max-h-[90vh]">
-            <div class="flex items-center justify-between mb-8 pb-4 border-b border-rydeen-border">
+            <div class="flex items-center justify-between mb-6 pb-4 border-b border-rydeen-border">
                 <div class="flex items-center gap-4">
                     <div class="text-rydeen-gold text-2xl">
                         <i class="fa-solid fa-book-journal-whills"></i>
                     </div>
                     <div>
                         <h3 class="text-lg font-bold text-rydeen-text tracking-widest">修練の記録</h3>
-                        <p class="text-[10px] text-rydeen-gold_dim tracking-widest mt-1 uppercase">Training History</p>
+                        <p class="text-[10px] text-rydeen-gold_dim tracking-widest mt-1 uppercase">最高称号: <span id="stats-best-rank" class="text-rydeen-gold font-bold">未獲得</span></p>
                     </div>
                 </div>
                 <button id="btn-stats-close" class="text-rydeen-muted hover:text-rydeen-gold p-2 text-xl transition">
@@ -412,8 +415,18 @@
                 </button>
             </div>
 
+            <!-- Filter Tabs -->
+            <div class="flex gap-2 mb-4 overflow-x-auto pb-2 hide-scroll">
+                <button class="stats-filter-btn active px-4 py-1.5 bg-rydeen-gold text-rydeen-bg text-xs font-bold tracking-widest transition" data-filter="all">全て</button>
+                <button class="stats-filter-btn px-4 py-1.5 bg-rydeen-surface_light border border-rydeen-border text-rydeen-muted hover:text-rydeen-gold text-xs tracking-widest transition" data-filter="add">足し算</button>
+                <button class="stats-filter-btn px-4 py-1.5 bg-rydeen-surface_light border border-rydeen-border text-rydeen-muted hover:text-rydeen-gold text-xs tracking-widest transition" data-filter="sub">引き算</button>
+                <button class="stats-filter-btn px-4 py-1.5 bg-rydeen-surface_light border border-rydeen-border text-rydeen-muted hover:text-rydeen-gold text-xs tracking-widest transition" data-filter="mul">掛け算</button>
+                <button class="stats-filter-btn px-4 py-1.5 bg-rydeen-surface_light border border-rydeen-border text-rydeen-muted hover:text-rydeen-gold text-xs tracking-widest transition" data-filter="div_exact">割算(整)</button>
+                <button class="stats-filter-btn px-4 py-1.5 bg-rydeen-surface_light border border-rydeen-border text-rydeen-muted hover:text-rydeen-gold text-xs tracking-widest transition" data-filter="div_float">割算(小)</button>
+            </div>
+
             <!-- Chart area -->
-            <div class="bg-rydeen-bg p-4 border border-rydeen-border mb-6 h-56 relative">
+            <div class="bg-rydeen-bg p-4 border border-rydeen-border mb-6 h-48 relative">
                 <canvas id="stats-chart"></canvas>
             </div>
 
@@ -563,13 +576,14 @@
     <script>
         // State Management
         const state = {
-            op: 'add',        // add, sub, mul, div_int, div_float
+            op: 'add',        // add, sub, mul, div_exact, div_float
             digits: 1,        // 1, 2, 3
             matrixSize: 10,   // 3, 5, 10
             rowHeader: [],
             colHeader: [],
-            answers: [],      // 2D matrix of correct answers (numbers)
+            answers: [],      // 2D matrix of correct answers (strings)
             userState: [],    // 2D status: { answered: bool }
+            totalValidCells: 0,
             
             // Stats
             startTime: null,
@@ -626,10 +640,12 @@
             btnStatsClose: document.getElementById('btn-stats-close'),
             btnClearStats: document.getElementById('btn-clear-stats'),
             statsHistoryList: document.getElementById('stats-history-list'),
-            statsChartCanvas: document.getElementById('stats-chart')
+            statsChartCanvas: document.getElementById('stats-chart'),
+            statsBestRank: document.getElementById('stats-best-rank')
         };
 
         let chartInstance = null;
+        let currentStatsFilter = 'all';
 
         // Load History from LocalStorage
         function loadHistory() {
@@ -737,6 +753,24 @@
 
             elements.btnStatsModal.addEventListener('click', openStatsModal);
             elements.btnStatsClose.addEventListener('click', () => elements.statsModal.classList.add('hidden'));
+            
+            // Stats Filter Tabs
+            document.querySelectorAll('.stats-filter-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    document.querySelectorAll('.stats-filter-btn').forEach(b => {
+                        b.classList.remove('active', 'bg-rydeen-gold', 'text-rydeen-bg', 'font-bold');
+                        b.classList.add('bg-rydeen-surface_light', 'border', 'border-rydeen-border', 'text-rydeen-muted');
+                    });
+                    const target = e.target;
+                    target.classList.remove('bg-rydeen-surface_light', 'border', 'border-rydeen-border', 'text-rydeen-muted');
+                    target.classList.add('active', 'bg-rydeen-gold', 'text-rydeen-bg', 'font-bold');
+                    
+                    currentStatsFilter = target.dataset.filter;
+                    renderHistoryTable();
+                    renderChart();
+                });
+            });
+
             elements.btnClearStats.addEventListener('click', () => {
                 // Use a custom modal for this as well in production, but for simplicity here we keep confirm or just clear directly with a short delay.
                 // Let's implement a simple direct clear with visual feedback since confirm() is banned.
@@ -758,29 +792,16 @@
 
         // Helper to generate array of random numbers based on digits
         function generateNumbers(count, digits, op, isCol = false) {
-            // 1桁で要素数10(つまり10マス計算の全て)の場合は重複なしの0〜9を生成
-            if (digits === 1 && count === 10) {
-                let pool = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
-                
-                // 割り算の列（割る数）の場合は0除算を防ぐため 1〜10 にする
-                if ((op === 'div_int' || op === 'div_float') && isCol) {
-                    pool = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
-                }
-
-                // 配列をシャッフル
-                for (let i = pool.length - 1; i > 0; i--) {
-                    const j = Math.floor(Math.random() * (i + 1));
-                    [pool[i], pool[j]] = [pool[j], pool[i]];
-                }
-                return pool;
-            }
-
-            const numbers = [];
+            let pool = [];
             let min = 1;
             let max = 9;
 
             if (digits === 1) {
-                min = ((op === 'div_int' || op === 'div_float') && isCol) ? 1 : 0;
+                min = (isCol && (op === 'div_exact' || op === 'div_float')) ? 1 : 0;
+                max = 9;
+                if (count > (max - min + 1)) {
+                    max = min + count - 1; // 必要な数だけ上限を広げてユニーク性を確保
+                }
             } else if (digits === 2) {
                 min = 10;
                 max = 99;
@@ -789,33 +810,34 @@
                 max = 999;
             }
 
-            for (let i = 0; i < count; i++) {
-                let val = Math.floor(Math.random() * (max - min + 1)) + min;
-                numbers.push(val);
+            // 指定桁数の全候補をプールに入れる
+            for (let i = min; i <= max; i++) {
+                pool.push(i);
             }
-            return numbers;
+
+            // シャッフル
+            for (let i = pool.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [pool[i], pool[j]] = [pool[j], pool[i]];
+            }
+
+            // 指定個数だけ抽出 (数字のかぶりなし)
+            return pool.slice(0, count);
         }
 
-        // Get Expected Answer for Cell (Returns String)
-        function getExpectedAnswer(r, c) {
-            const left = state.rowHeader[r];
-            const top = state.colHeader[c];
-            
-            if (state.op === 'add') return String(left + top);
-            if (state.op === 'sub') return String(left - top);
-            if (state.op === 'mul') return String(left * top);
-            if (state.op === 'div_int') return String(left); 
-            if (state.op === 'div_float') {
-                // 完全に割り切れる場合はそのままの整数
-                if (left % top === 0) {
-                    return String(left / top);
-                } else {
-                    // 小数第2位まで(四捨五入)求め、小数点を抜いた文字列にする
-                    const val = Math.round((left / top) * 100) / 100;
-                    return String(val).replace('.', '');
-                }
+        // 完全に割り切れるモード用の特殊な列生成（最小公倍数が大きくなりすぎないように制御）
+        function generateDivExactCols(count, digits) {
+            let pool = [];
+            // 計算しやすさと割り切れやすさを両立する因数のプール
+            if (digits === 1) pool = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 14, 15]; 
+            else if (digits === 2) pool = [10, 12, 14, 15, 18, 20, 21, 24, 25, 28, 30, 35, 36, 40, 42, 45, 50, 56, 60, 70, 72, 84, 90];
+            else if (digits === 3) pool = [100, 120, 125, 140, 150, 180, 200, 210, 240, 250, 280, 300, 360, 400, 420, 500, 600, 700, 840];
+
+            for (let i = pool.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [pool[i], pool[j]] = [pool[j], pool[i]];
             }
-            return "0";
+            return pool.slice(0, count);
         }
 
         // Start Exercise Logic
@@ -831,19 +853,57 @@
             const digits = state.digits;
             const op = state.op;
 
-            // Generate Headers
-            state.colHeader = generateNumbers(size, digits, op, true);
-            state.rowHeader = generateNumbers(size, digits, op, false);
-
             // Calculate Answers matrix and Setup User State
             state.answers = [];
             state.userState = [];
+            state.totalValidCells = size * size;
+
+            if (op === 'div_exact') {
+                // すべて割り切れるモード：列を生成し、最小公倍数(LCM)を計算して行をその倍数に固定する
+                state.colHeader = generateDivExactCols(size, digits);
+                const gcd = (a, b) => b === 0 ? a : gcd(b, a % b);
+                const lcm = (a, b) => (a * b) / gcd(a, b);
+                let currentLcm = state.colHeader[0];
+                for(let i=1; i<size; i++) currentLcm = lcm(currentLcm, state.colHeader[i]);
+                
+                // 行の倍数（ユニーク）を生成
+                let multPool = [];
+                for(let i=1; i<=size*3; i++) multPool.push(i);
+                multPool.sort(() => Math.random() - 0.5);
+                state.rowHeader = multPool.slice(0, size).map(m => currentLcm * m);
+            } else {
+                state.colHeader = generateNumbers(size, digits, op, true);
+                state.rowHeader = generateNumbers(size, digits, op, false);
+            }
 
             for (let r = 0; r < size; r++) {
                 const rowAns = [];
                 const rowSt = [];
                 for (let c = 0; c < size; c++) {
-                    rowAns.push(getExpectedAnswer(r, c));
+                    const left = state.rowHeader[r];
+                    const top = state.colHeader[c];
+                    
+                    let expectedStr = "";
+
+                    if (op === 'add') {
+                        expectedStr = String(left + top);
+                    } else if (op === 'sub') {
+                        expectedStr = String(left - top);
+                    } else if (op === 'mul') {
+                        expectedStr = String(left * top);
+                    } else if (op === 'div_exact') {
+                        expectedStr = String(left / top); // 数学的に必ず整数になる
+                    } else if (op === 'div_float') {
+                        let div = left / top;
+                        if (Number.isInteger(div)) {
+                            expectedStr = String(div);
+                        } else {
+                            // 小数第2位まで四捨五入し、小数点を抜く
+                            expectedStr = String(Math.round(div * 100) / 100).replace('.', '');
+                        }
+                    }
+
+                    rowAns.push(expectedStr);
                     rowSt.push({ answered: false });
                 }
                 state.answers.push(rowAns);
@@ -852,7 +912,7 @@
 
             // Render HUD
             elements.hudProgress.textContent = '0';
-            elements.hudTotalCells.textContent = `/ ${size * size}`;
+            elements.hudTotalCells.textContent = `/ ${state.totalValidCells}`;
             elements.hudErrors.textContent = '0';
             elements.hudProgressBar.style.width = '0%';
             
@@ -860,12 +920,16 @@
                 add: '足し算 (+)',
                 sub: '引き算 (-)',
                 mul: '掛け算 (×)',
-                div_int: '割り算 (整)',
-                div_float: '割り算 (小数)'
+                div_exact: '割り算 (整)',
+                div_float: '割り算 (小)'
             };
             elements.hudModeBadge.textContent = `${size * size}マス / ${digits}桁 / ${opLabelMap[op]}`;
             
-            if (op === 'div_float') {
+            if (op === 'div_exact') {
+                elements.hudHintBadge.textContent = "※すべてのマスが完全に割り切れる計算です";
+                elements.hudHintBadge.classList.remove('hidden');
+            } else if (op === 'div_float') {
+                elements.hudHintBadge.textContent = "※小数は第2位まで四捨五入し、小数点を除いて入力（例: 0.25→025）";
                 elements.hudHintBadge.classList.remove('hidden');
             } else {
                 elements.hudHintBadge.classList.add('hidden');
@@ -887,7 +951,7 @@
 
             // Focus First Input Cell
             setTimeout(() => {
-                const firstCell = document.querySelector('input[data-row="0"][data-col="0"]');
+                const firstCell = document.querySelector('input.cell-input');
                 if (firstCell) firstCell.focus();
             }, 100);
         }
@@ -895,16 +959,13 @@
         // Build Table DOM
         function buildMatrixDOM() {
             const size = state.matrixSize;
-            const opSymbolMap = { add: '+', sub: '-', mul: '×', div_int: '÷', div_float: '÷' };
+            const opSymbolMap = { add: '+', sub: '-', mul: '×', div_exact: '÷', div_float: '÷.' };
             const opSymbol = opSymbolMap[state.op];
 
             // Adjust sizing based on matrix size & digit length
             let cellWidthClass = "w-14 h-12 text-base";
             if (state.digits === 2) cellWidthClass = "w-16 h-12 text-lg";
             if (state.digits === 3) cellWidthClass = "w-20 h-14 text-xl";
-            
-            // Allow larger cells for float mode to accommodate decimals like "-100.55"
-            if (state.op === 'div_float' && state.digits > 1) cellWidthClass = "w-24 h-14 text-lg";
 
             let html = '<thead><tr>';
             // Top-left Operator Header Cell
@@ -924,16 +985,12 @@
 
                 // Inputs
                 for (let c = 0; c < size; c++) {
-                    const isDivInt = state.op === 'div_int';
-                    const displayProblem = isDivInt ? `${state.rowHeader[r] * state.colHeader[c]}÷${state.colHeader[c]}` : '';
-                    
                     html += `
                         <td class="border border-rydeen-border bg-rydeen-bg p-0 relative group">
-                            ${isDivInt ? `<span class="absolute top-0.5 left-1 text-[9px] text-rydeen-gold/70 font-mono select-none">${displayProblem}</span>` : ''}
                             <input type="text" 
                                 data-row="${r}" 
                                 data-col="${c}" 
-                                class="cell-input w-full h-full text-center font-mono font-bold text-rydeen-text bg-transparent ${isDivInt ? 'pt-3' : ''}" 
+                                class="cell-input w-full h-full text-center font-mono font-bold text-rydeen-text bg-transparent" 
                                 autocomplete="off"
                                 inputmode="numeric"
                             />
@@ -969,6 +1026,20 @@
             elements.hudTimer.textContent = `${mStr}:${sStr}.${tenths}`;
         }
 
+        function moveFocusDir(r, c, rDir, cDir) {
+            const size = state.matrixSize;
+            let nextR = r + rDir;
+            let nextC = c + cDir;
+
+            if (nextR >= 0 && nextR < size && nextC >= 0 && nextC < size) {
+                const targetCell = document.querySelector(`input[data-row="${nextR}"][data-col="${nextC}"]`);
+                if (targetCell) {
+                    targetCell.focus();
+                    targetCell.select();
+                }
+            }
+        }
+
         // Cell Key Logic
         function handleCellKeyDown(e) {
             if (!state.isActive) return;
@@ -979,16 +1050,16 @@
 
             if (e.key === 'ArrowRight') {
                 e.preventDefault();
-                moveFocus(r, c + 1);
+                moveFocusDir(r, c, 0, 1);
             } else if (e.key === 'ArrowLeft') {
                 e.preventDefault();
-                moveFocus(r, c - 1);
+                moveFocusDir(r, c, 0, -1);
             } else if (e.key === 'ArrowDown') {
                 e.preventDefault();
-                moveFocus(r + 1, c);
+                moveFocusDir(r, c, 1, 0);
             } else if (e.key === 'ArrowUp') {
                 e.preventDefault();
-                moveFocus(r - 1, c);
+                moveFocusDir(r, c, -1, 0);
             } else if (e.key === 'Enter') {
                 e.preventDefault();
                 
@@ -1044,7 +1115,7 @@
                 input.readOnly = true;
 
                 // Update HUD Progress
-                const total = state.matrixSize * state.matrixSize;
+                const total = state.totalValidCells;
                 elements.hudProgress.textContent = state.completedCells;
                 elements.hudProgressBar.style.width = `${(state.completedCells / total) * 100}%`;
 
@@ -1079,28 +1150,30 @@
 
             if (nextC >= size) {
                 nextC = 0;
-                nextR = r + 1;
+                nextR++;
             }
-
+            
             if (nextR < size) {
-                moveFocus(nextR, nextC);
+                const targetCell = document.querySelector(`input[data-row="${nextR}"][data-col="${nextC}"]`);
+                if (targetCell) {
+                    targetCell.focus();
+                    targetCell.select();
+                }
             } else {
                 if(document.activeElement) document.activeElement.blur();
             }
         }
 
-        function moveFocus(r, c) {
-            const size = state.matrixSize;
-            if (r >= 0 && r < size && c >= 0 && c < size) {
-                const targetCell = document.querySelector(`input[data-row="${r}"][data-col="${c}"]`);
-                if (targetCell && !targetCell.readOnly) {
-                    targetCell.focus();
-                    targetCell.select();
-                } else if (targetCell && targetCell.readOnly) {
-                    // Skip already answered cells (useful for manual navigation)
-                    // (Optional enhancement, left simple for now)
-                }
-            }
+        function getRankName(avgSpeed) {
+            if (avgSpeed <= 0.2) return "Error";
+            if (avgSpeed <= 0.4) return "神を超えし者";
+            if (avgSpeed <= 0.6) return "神の領域";
+            if (avgSpeed <= 0.8) return "魔王";
+            if (avgSpeed <= 1.0) return "影の実力者";
+            if (avgSpeed <= 1.5) return "古の勇者";
+            if (avgSpeed <= 2.0) return "無自覚の英雄";
+            if (avgSpeed <= 3.0) return "只者ではない";
+            return "初心者";
         }
 
         // Finish Exercise
@@ -1112,19 +1185,11 @@
 
             const timeFormatted = elements.hudTimer.textContent;
             const totalSec = state.elapsedMs / 1000;
-            const totalCells = state.matrixSize * state.matrixSize;
-            const avgSpeed = totalSec / totalCells;
+            const totalCells = state.totalValidCells;
+            const avgSpeed = totalSec / (totalCells > 0 ? totalCells : 1);
 
-            // Determine Rank based on average speed (seconds per cell)
-            let rank = "初心者";
-            if (avgSpeed <= 0.2) rank = "Error";
-            else if (avgSpeed <= 0.4) rank = "神を超えし者";
-            else if (avgSpeed <= 0.6) rank = "神の領域";
-            else if (avgSpeed <= 0.8) rank = "魔王";
-            else if (avgSpeed <= 1.0) rank = "影の実力者";
-            else if (avgSpeed <= 1.5) rank = "古の勇者";
-            else if (avgSpeed <= 2.0) rank = "無自覚の英雄";
-            else if (avgSpeed <= 3.0) rank = "只者ではない";
+            // Determine Rank based on average speed
+            const rank = getRankName(avgSpeed);
 
             // Populate Result Modal
             elements.resultRank.textContent = rank;
@@ -1139,6 +1204,7 @@
                 op: state.op,
                 digits: state.digits,
                 size: state.matrixSize,
+                validCells: state.totalValidCells,
                 timeStr: timeFormatted,
                 timeMs: state.elapsedMs,
                 errors: state.errorCount
@@ -1165,27 +1231,48 @@
 
         // Render Stats Modal & Chart
         function openStatsModal() {
+            updateBestRank();
             renderHistoryTable();
             renderChart();
             elements.statsModal.classList.remove('hidden');
         }
 
-        function renderHistoryTable() {
+        function updateBestRank() {
             if (state.history.length === 0) {
+                elements.statsBestRank.textContent = "未獲得";
+                return;
+            }
+            let bestSpeed = Infinity;
+            state.history.forEach(r => {
+                const cells = r.validCells || (r.size * r.size);
+                const avgSpeed = r.timeMs / 1000 / cells;
+                if (avgSpeed < bestSpeed) bestSpeed = avgSpeed;
+            });
+            elements.statsBestRank.textContent = getRankName(bestSpeed);
+        }
+
+        function renderHistoryTable() {
+            let targetHistory = state.history;
+            if (currentStatsFilter !== 'all') {
+                targetHistory = state.history.filter(r => r.op === currentStatsFilter);
+            }
+
+            if (targetHistory.length === 0) {
                 elements.statsHistoryList.innerHTML = '<tr><td colspan="4" class="p-6 text-center text-rydeen-muted text-sm tracking-widest border-b border-rydeen-border">記録が存在しません。</td></tr>';
                 return;
             }
 
-            const opMap = { add: '+', sub: '-', mul: '×', div_int: '÷整', div_float: '÷小' };
+            const opMap = { add: '+', sub: '-', mul: '×', div_exact: '÷(整)', div_float: '÷(小)' };
             
             let html = '';
-            state.history.slice(0, 15).forEach(rec => {
+            targetHistory.slice(0, 15).forEach(rec => {
+                const cellsStr = rec.validCells ? `${rec.validCells}マス` : `${rec.size * rec.size}マス`;
                 html += `
                     <tr class="hover:bg-rydeen-surface_light transition">
                         <td class="p-3 text-rydeen-muted">${rec.date}</td>
                         <td class="p-3">
                             <span class="px-2 py-1 bg-rydeen-bg border border-rydeen-border text-rydeen-text text-xs tracking-wider">
-                                ${rec.size * rec.size}マス / ${rec.digits}桁 (${opMap[rec.op]})
+                                ${cellsStr} / ${rec.digits}桁 (${opMap[rec.op] || rec.op})
                             </span>
                         </td>
                         <td class="p-3 text-right font-bold text-rydeen-gold">${rec.timeStr}</td>
@@ -1199,7 +1286,12 @@
         function renderChart() {
             const ctx = elements.statsChartCanvas.getContext('2d');
             
-            const recent = state.history.slice(0, 10).reverse();
+            let targetHistory = state.history;
+            if (currentStatsFilter !== 'all') {
+                targetHistory = state.history.filter(r => r.op === currentStatsFilter);
+            }
+
+            const recent = targetHistory.slice(0, 10).reverse();
             const labels = recent.map(r => r.date.split(' ')[0]);
             const dataSec = recent.map(r => (r.timeMs / 1000).toFixed(1));
 
@@ -1250,6 +1342,17 @@
         window.onload = () => {
             loadHistory();
             initEvents();
+
+            // ブラウザの自動再生ブロック対策: ユーザーが画面のどこかをクリック/キー入力した瞬間にBGMを確実に再生開始する
+            const unlockAudio = () => {
+                soundFX.startBGM();
+                document.removeEventListener('click', unlockAudio);
+                document.removeEventListener('keydown', unlockAudio);
+                document.removeEventListener('touchstart', unlockAudio);
+            };
+            document.addEventListener('click', unlockAudio);
+            document.addEventListener('keydown', unlockAudio);
+            document.addEventListener('touchstart', unlockAudio);
         };
     </script>
 </body>
