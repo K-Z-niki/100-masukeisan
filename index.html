@@ -1,0 +1,1256 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>エンハンスド１００計算</title>
+    <!-- Google Fonts: Noto Serif JP for crafting / premium look -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@400;700;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js for statistics -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        rydeen: {
+                            bg: '#0c0c0c',
+                            surface: '#151515',
+                            surface_light: '#1e1e1e',
+                            gold: '#d4af37',
+                            gold_dim: '#8f7725',
+                            text: '#f2f2f2',
+                            muted: '#8a8a8e',
+                            border: '#333336',
+                            danger: '#8b0000'
+                        }
+                    },
+                    fontFamily: {
+                        serif: ['"Noto Serif JP"', 'serif'],
+                        mono: ['"JetBrains Mono"', 'monospace']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #0c0c0c;
+            color: #f2f2f2;
+            user-select: none;
+            background-image: radial-gradient(circle at center, #1a1a1d 0%, #0c0c0c 100%);
+        }
+
+        /* Input styling without spin buttons */
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type="number"] {
+            -moz-appearance: textfield;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0c0c0c;
+            border-left: 1px solid #333336;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #333336;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #d4af37;
+        }
+
+        /* Grid inputs effect */
+        .cell-input {
+            transition: all 0.2s ease-in-out;
+            border: 1px solid transparent;
+        }
+        
+        .cell-input:focus {
+            outline: none;
+            background-color: #1e1e1e;
+            border-color: #d4af37;
+            box-shadow: inset 0 0 10px rgba(212, 175, 55, 0.1);
+        }
+
+        .cell-correct {
+            background-color: rgba(212, 175, 55, 0.1) !important;
+            color: #d4af37 !important;
+            font-weight: 900;
+        }
+
+        .cell-wrong-shake {
+            animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both;
+            background-color: rgba(139, 0, 0, 0.2) !important;
+            color: #ff4c4c !important;
+        }
+
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-1px, 0, 0); }
+            20%, 80% { transform: translate3d(2px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+            40%, 60% { transform: translate3d(4px, 0, 0); }
+        }
+
+        .gold-text-glow {
+            text-shadow: 0 0 15px rgba(212, 175, 55, 0.4);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col font-serif antialiased">
+
+    <!-- AUDIO -->
+    <audio id="bgm-audio" src="BGM/フィットネスジム.mp3" loop></audio>
+
+    <!-- TOP HEADER -->
+    <header class="bg-rydeen-bg/90 backdrop-blur-md px-6 py-4 flex items-center justify-between border-b border-rydeen-border shadow-md sticky top-0 z-40">
+        <div class="flex items-center space-x-4">
+            <div class="w-10 h-10 border border-rydeen-gold flex items-center justify-center text-rydeen-gold">
+                <i class="fa-solid fa-calculator text-lg"></i>
+            </div>
+            <div>
+                <h1 class="text-xl md:text-2xl font-black tracking-widest text-rydeen-text gold-text-glow uppercase">
+                    エンハンスド１００計算
+                </h1>
+                <p class="text-[10px] md:text-xs text-rydeen-gold_dim tracking-[0.2em] uppercase mt-0.5">Premium Math Matrix</p>
+            </div>
+        </div>
+
+        <div class="flex items-center space-x-2 md:space-x-4">
+            <div class="flex flex-col items-center gap-1 mr-2">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-music text-[10px] text-rydeen-muted"></i>
+                    <input type="range" id="bgm-volume" min="0" max="100" value="15" class="w-16 md:w-24 h-1 accent-[#d4af37] bg-rydeen-border appearance-none rounded-full cursor-pointer outline-none">
+                </div>
+            </div>
+            <button id="btn-sound-toggle" class="p-2 text-rydeen-muted hover:text-rydeen-gold transition" title="効果音のON/OFF">
+                <i class="fa-solid fa-volume-high text-lg" id="sound-icon"></i>
+            </button>
+            <button id="btn-stats-modal" class="px-4 py-2 bg-rydeen-surface hover:bg-rydeen-surface_light text-rydeen-text border border-rydeen-border hover:border-rydeen-gold transition flex items-center gap-2 text-xs md:text-sm tracking-wider">
+                <i class="fa-solid fa-chart-line text-rydeen-gold"></i> 成績履歴
+            </button>
+        </div>
+    </header>
+
+    <!-- MAIN CONTAINER -->
+    <main class="flex-1 max-w-6xl w-full mx-auto p-4 md:p-6 flex flex-col gap-6">
+
+        <!-- CONFIGURATION BAR (When not active) -->
+        <div id="config-panel" class="bg-rydeen-surface border border-rydeen-border p-6 md:p-8 transition-all duration-300 shadow-xl relative overflow-hidden">
+            <!-- Decorative corner -->
+            <div class="absolute top-0 left-0 w-8 h-8 border-t-2 border-l-2 border-rydeen-gold opacity-50"></div>
+            <div class="absolute bottom-0 right-0 w-8 h-8 border-b-2 border-r-2 border-rydeen-gold opacity-50"></div>
+
+            <h2 class="text-sm font-bold text-rydeen-gold tracking-widest mb-6 flex items-center gap-3">
+                <i class="fa-solid fa-sliders"></i> 修練の設定
+                <div class="flex-1 h-px bg-gradient-to-r from-rydeen-gold/50 to-transparent ml-4"></div>
+            </h2>
+            
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- Operation Selector -->
+                <div class="lg:col-span-1">
+                    <label class="block text-xs tracking-wider text-rydeen-muted mb-3 uppercase">計算式</label>
+                    <div class="grid grid-cols-2 gap-3">
+                        <button class="op-btn active p-3 border border-rydeen-gold bg-rydeen-surface_light text-rydeen-gold flex flex-col items-center justify-center transition" data-op="add">
+                            <span class="text-xl font-bold font-mono">+</span>
+                            <span class="text-[10px] mt-1 tracking-widest">足し算</span>
+                        </button>
+                        <button class="op-btn p-3 border border-rydeen-border bg-rydeen-surface hover:border-rydeen-gold/50 text-rydeen-muted flex flex-col items-center justify-center transition" data-op="sub">
+                            <span class="text-xl font-bold font-mono">-</span>
+                            <span class="text-[10px] mt-1 tracking-widest">引き算</span>
+                        </button>
+                        <button class="op-btn p-3 border border-rydeen-border bg-rydeen-surface hover:border-rydeen-gold/50 text-rydeen-muted flex flex-col items-center justify-center transition" data-op="mul">
+                            <span class="text-xl font-bold font-mono">×</span>
+                            <span class="text-[10px] mt-1 tracking-widest">掛け算</span>
+                        </button>
+                        <button class="op-btn p-3 border border-rydeen-border bg-rydeen-surface hover:border-rydeen-gold/50 text-rydeen-muted flex flex-col items-center justify-center transition" data-op="div_int">
+                            <span class="text-xl font-bold font-mono">÷</span>
+                            <span class="text-[10px] mt-1 tracking-widest">割算 (整)</span>
+                        </button>
+                        <button class="op-btn col-span-2 p-3 border border-rydeen-border bg-rydeen-surface hover:border-rydeen-gold/50 text-rydeen-muted flex flex-col items-center justify-center transition" data-op="div_float">
+                            <span class="text-xl font-bold font-mono">÷ 小数</span>
+                            <span class="text-[10px] mt-1 tracking-widest">割算 (小数点を省いて入力)</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Digits Selector -->
+                <div>
+                    <label class="block text-xs tracking-wider text-rydeen-muted mb-3 uppercase">難易度 (桁数)</label>
+                    <div class="grid grid-cols-1 gap-3">
+                        <button class="digit-btn active p-3 flex items-center justify-between border border-rydeen-gold bg-rydeen-surface_light text-rydeen-gold transition" data-digits="1">
+                            <span class="text-sm font-bold tracking-widest">壱桁</span>
+                            <span class="text-xs font-mono opacity-70">0 ~ 9</span>
+                        </button>
+                        <button class="digit-btn p-3 flex items-center justify-between border border-rydeen-border bg-rydeen-surface hover:border-rydeen-gold/50 text-rydeen-muted transition" data-digits="2">
+                            <span class="text-sm font-bold tracking-widest">弐桁</span>
+                            <span class="text-xs font-mono opacity-70">10 ~ 99</span>
+                        </button>
+                        <button class="digit-btn p-3 flex items-center justify-between border border-rydeen-border bg-rydeen-surface hover:border-rydeen-gold/50 text-rydeen-muted transition" data-digits="3">
+                            <span class="text-sm font-bold tracking-widest">参桁</span>
+                            <span class="text-xs font-mono opacity-70">100 ~ 999</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Matrix Size Selector -->
+                <div>
+                    <label class="block text-xs tracking-wider text-rydeen-muted mb-3 uppercase">陣立て (マス目)</label>
+                    <div class="grid grid-cols-1 gap-3">
+                        <button class="size-btn p-3 flex items-center justify-between border border-rydeen-border bg-rydeen-surface hover:border-rydeen-gold/50 text-rydeen-muted transition" data-size="5">
+                            <span class="text-sm font-bold tracking-widest">二十五マス</span>
+                            <span class="text-xs font-mono opacity-70">5 × 5</span>
+                        </button>
+                        <button class="size-btn active p-3 flex items-center justify-between border border-rydeen-gold bg-rydeen-surface_light text-rydeen-gold transition" data-size="10">
+                            <span class="text-sm font-bold tracking-widest">百マス</span>
+                            <span class="text-xs font-mono opacity-70">10 × 10</span>
+                        </button>
+                        <button class="size-btn p-3 flex items-center justify-between border border-rydeen-border bg-rydeen-surface hover:border-rydeen-gold/50 text-rydeen-muted transition" data-size="3">
+                            <span class="text-sm font-bold tracking-widest">九マス</span>
+                            <span class="text-xs font-mono opacity-70">3 × 3 (早解)</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Start Action Button -->
+            <div class="mt-10 flex justify-center">
+                <button id="btn-start" class="w-full md:w-auto px-16 py-4 bg-rydeen-gold text-rydeen-bg font-black tracking-widest shadow-[0_0_20px_rgba(212,175,55,0.3)] hover:bg-[#e0c050] hover:shadow-[0_0_30px_rgba(212,175,55,0.5)] active:scale-95 transition-all duration-200 uppercase flex items-center justify-center gap-3">
+                    <i class="fa-solid fa-play text-sm"></i> 鍛錬を開始す
+                </button>
+            </div>
+        </div>
+
+        <!-- ACTIVE HUD (Timer & Stats Dashboard) -->
+        <div id="hud-panel" class="hidden bg-rydeen-surface border border-rydeen-border p-4 md:p-6 shadow-xl transition-all duration-300 relative">
+            <!-- Decorative line -->
+            <div class="absolute top-0 left-0 w-full h-0.5 bg-gradient-to-r from-transparent via-rydeen-gold to-transparent opacity-30"></div>
+
+            <div class="flex flex-wrap items-center justify-between gap-4">
+                
+                <!-- Left: Status Info -->
+                <div class="flex items-center gap-6">
+                    <div>
+                        <span class="text-[10px] tracking-widest text-rydeen-muted block mb-1 uppercase">進捗</span>
+                        <div class="flex items-baseline gap-1">
+                            <span id="hud-progress" class="text-2xl font-bold font-mono text-rydeen-gold">0</span>
+                            <span id="hud-total-cells" class="text-xs text-rydeen-muted font-mono">/ 100</span>
+                        </div>
+                    </div>
+                    
+                    <div class="h-10 w-px bg-rydeen-border"></div>
+
+                    <div>
+                        <span class="text-[10px] tracking-widest text-rydeen-muted block mb-1 uppercase">過ち</span>
+                        <span id="hud-errors" class="text-2xl font-bold font-mono text-rydeen-danger">0</span>
+                    </div>
+
+                    <div class="h-10 w-px bg-rydeen-border"></div>
+
+                    <div>
+                        <span class="text-[10px] tracking-widest text-rydeen-muted block mb-1 uppercase">設定</span>
+                        <span id="hud-mode-badge" class="px-2 py-1 bg-rydeen-surface_light text-xs tracking-wider text-rydeen-text border border-rydeen-border">
+                            100マス / 1桁 / 足し算
+                        </span>
+                        <span id="hud-hint-badge" class="hidden px-2 py-1 ml-2 bg-rydeen-surface_light text-[10px] tracking-wider text-rydeen-gold border border-rydeen-gold/30">
+                            ※割切れない場合は小数第2位までを小数点なしで入力 (例: 025)
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Center: Timer -->
+                <div class="flex items-center gap-3 px-6 py-2 bg-rydeen-bg border border-rydeen-border shadow-inner">
+                    <i class="fa-regular fa-clock text-rydeen-gold animate-pulse"></i>
+                    <span id="hud-timer" class="text-3xl font-bold font-mono tracking-wider text-rydeen-text">00:00.0</span>
+                </div>
+
+                <!-- Right: Control Buttons -->
+                <div class="flex items-center gap-3">
+                    <button id="btn-giveup" class="px-4 py-2 bg-rydeen-bg hover:bg-rydeen-danger/20 text-rydeen-danger border border-rydeen-border hover:border-rydeen-danger transition text-xs tracking-widest font-bold">
+                        終了する
+                    </button>
+                    <button id="btn-reset" class="px-4 py-2 bg-rydeen-bg hover:bg-rydeen-surface_light text-rydeen-text border border-rydeen-border hover:border-rydeen-gold transition text-xs tracking-widest font-bold flex items-center gap-2">
+                        <i class="fa-solid fa-rotate-left"></i> 最初から
+                    </button>
+                </div>
+            </div>
+
+            <!-- Progress Bar -->
+            <div class="w-full bg-rydeen-bg h-1 mt-6 overflow-hidden">
+                <div id="hud-progress-bar" class="bg-rydeen-gold h-full transition-all duration-200" style="width: 0%; box-shadow: 0 0 10px #d4af37;"></div>
+            </div>
+        </div>
+
+        <!-- MATRIX GRID AREA -->
+        <div id="grid-container" class="bg-rydeen-surface border border-rydeen-border p-4 md:p-6 shadow-xl overflow-x-auto min-h-[400px] flex flex-col items-center relative">
+            
+            <!-- Cover Placeholder when inactive -->
+            <div id="grid-placeholder" class="text-center py-20 px-4 m-auto">
+                <div class="w-16 h-16 mx-auto mb-6 border border-rydeen-gold flex items-center justify-center text-rydeen-gold text-2xl rotate-45">
+                    <i class="fa-solid fa-table-cells -rotate-45"></i>
+                </div>
+                <h3 class="text-xl font-bold text-rydeen-text mb-3 tracking-widest">心静かに、開始を待つ。</h3>
+                <p class="text-sm text-rydeen-muted max-w-md mx-auto mb-4 leading-relaxed">
+                    「鍛錬を開始す」ボタンを押して挑んでください。
+                </p>
+                <div class="bg-rydeen-surface_light border border-rydeen-border p-3 mb-8 max-w-md mx-auto text-left">
+                    <p class="text-[10px] text-rydeen-gold tracking-widest mb-2"><i class="fa-solid fa-circle-info"></i> 割算 (小数) について</p>
+                    <p class="text-xs text-rydeen-muted tracking-wide leading-relaxed">
+                        <strong class="text-rydeen-text">割り切れる場合：</strong>そのまま整数を入力<br>
+                        例: 9 ÷ 1 = 9 ➔ <span class="font-mono text-rydeen-gold bg-rydeen-bg px-1 border border-rydeen-border">9</span><br>
+                        <strong class="text-rydeen-text mt-1 block">割り切れない場合：</strong>小数第2位まで(四捨五入)の数字を<strong>小数点を打たずに</strong>入力<br>
+                        例: 1 ÷ 3 = 0.333... ➔ <span class="font-mono text-rydeen-gold bg-rydeen-bg px-1 border border-rydeen-border">033</span><br>
+                        例: 1 ÷ 4 = 0.25 ➔ <span class="font-mono text-rydeen-gold bg-rydeen-bg px-1 border border-rydeen-border">025</span><br>
+                        例: 1 ÷ 2 = 0.5 ➔ <span class="font-mono text-rydeen-gold bg-rydeen-bg px-1 border border-rydeen-border">05</span>
+                    </p>
+                </div>
+                <div class="inline-flex items-center gap-6 text-xs text-rydeen-gold bg-rydeen-bg px-6 py-3 border border-rydeen-border tracking-widest">
+                    <span><i class="fa-solid fa-keyboard mr-2"></i>自動判定＆自動進行</span>
+                </div>
+            </div>
+
+            <!-- Dynamic Table Grid -->
+            <div id="matrix-wrapper" class="hidden w-full flex justify-center pb-4">
+                <table id="matrix-table" class="border-collapse border-2 border-rydeen-gold bg-rydeen-bg shadow-2xl">
+                    <!-- JS generated content -->
+                </table>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- RESULT MODAL -->
+    <div id="result-modal" class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-rydeen-surface border-2 border-rydeen-gold max-w-md w-full p-8 shadow-[0_0_40px_rgba(212,175,55,0.2)] relative text-center">
+            <div class="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-rydeen-bg px-4 border border-rydeen-gold text-rydeen-gold text-2xl">
+                <i class="fa-solid fa-award"></i>
+            </div>
+            
+            <h3 class="text-3xl font-black text-rydeen-text mt-4 mb-2 tracking-widest">修練完遂</h3>
+            <p class="text-xs text-rydeen-muted tracking-widest mb-6">見事、全ての計算を解き明かしました。</p>
+
+            <!-- Rank Display -->
+            <div class="mb-6 text-center">
+                <span class="text-[10px] text-rydeen-gold_dim tracking-widest uppercase block mb-1">獲得称号</span>
+                <span id="result-rank" class="text-2xl md:text-3xl font-black text-rydeen-gold gold-text-glow tracking-widest">初心者</span>
+            </div>
+
+            <!-- Stats Cards -->
+            <div class="grid grid-cols-2 gap-4 mb-8">
+                <div class="bg-rydeen-bg p-4 border border-rydeen-border text-center">
+                    <span class="text-[10px] text-rydeen-muted block mb-2 tracking-widest uppercase">所要時間</span>
+                    <span id="result-time" class="text-2xl font-bold font-mono text-rydeen-gold">01:23.4</span>
+                </div>
+                <div class="bg-rydeen-bg p-4 border border-rydeen-border text-center">
+                    <span class="text-[10px] text-rydeen-muted block mb-2 tracking-widest uppercase">過ちの数</span>
+                    <span id="result-errors" class="text-2xl font-bold font-mono text-rydeen-danger">2</span>
+                </div>
+            </div>
+
+            <div class="bg-rydeen-surface_light p-3 border border-rydeen-border text-xs text-rydeen-text mb-8 flex items-center justify-between tracking-widest">
+                <span>壱陣あたりの速度:</span>
+                <span id="result-avg-speed" class="font-mono font-bold text-rydeen-gold">0.83 秒</span>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex gap-4">
+                <button id="btn-result-close" class="flex-1 py-3 bg-rydeen-bg hover:bg-rydeen-surface_light text-rydeen-text border border-rydeen-border transition tracking-widest text-sm">
+                    陣地へ戻る
+                </button>
+                <button id="btn-result-retry" class="flex-1 py-3 bg-rydeen-gold hover:bg-[#e0c050] text-rydeen-bg font-bold shadow transition tracking-widest text-sm">
+                    再び挑む
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- GIVEUP CONFIRM MODAL -->
+    <div id="giveup-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-rydeen-surface border border-rydeen-border max-w-sm w-full p-8 shadow-2xl relative text-center">
+            <h3 class="text-xl font-bold text-rydeen-text mb-4 tracking-widest">修練を中断しますか？</h3>
+            <p class="text-xs text-rydeen-muted mb-8 tracking-widest leading-relaxed">ここまでの記録は残りません。<br>真に終了してよろしいですか。</p>
+            <div class="flex gap-4">
+                <button id="btn-giveup-cancel" class="flex-1 py-3 bg-rydeen-bg text-rydeen-text border border-rydeen-border hover:bg-rydeen-surface_light transition tracking-widest text-sm">
+                    留まる
+                </button>
+                <button id="btn-giveup-confirm" class="flex-1 py-3 bg-rydeen-danger/20 text-rydeen-danger border border-rydeen-danger hover:bg-rydeen-danger/30 font-bold transition tracking-widest text-sm">
+                    終了する
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- STATS / HISTORY MODAL -->
+    <div id="stats-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-rydeen-surface border border-rydeen-border max-w-3xl w-full p-6 md:p-8 shadow-2xl relative flex flex-col max-h-[90vh]">
+            <div class="flex items-center justify-between mb-8 pb-4 border-b border-rydeen-border">
+                <div class="flex items-center gap-4">
+                    <div class="text-rydeen-gold text-2xl">
+                        <i class="fa-solid fa-book-journal-whills"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-lg font-bold text-rydeen-text tracking-widest">修練の記録</h3>
+                        <p class="text-[10px] text-rydeen-gold_dim tracking-widest mt-1 uppercase">Training History</p>
+                    </div>
+                </div>
+                <button id="btn-stats-close" class="text-rydeen-muted hover:text-rydeen-gold p-2 text-xl transition">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Chart area -->
+            <div class="bg-rydeen-bg p-4 border border-rydeen-border mb-6 h-56 relative">
+                <canvas id="stats-chart"></canvas>
+            </div>
+
+            <!-- History Table -->
+            <div class="flex-1 overflow-y-auto border border-rydeen-border bg-rydeen-bg">
+                <table class="w-full text-left text-xs md:text-sm">
+                    <thead class="bg-rydeen-surface_light text-rydeen-muted sticky top-0 border-b border-rydeen-border">
+                        <tr>
+                            <th class="p-3 font-medium tracking-widest">日時</th>
+                            <th class="p-3 font-medium tracking-widest">陣立て (設定)</th>
+                            <th class="p-3 font-medium tracking-widest text-right">所要時間</th>
+                            <th class="p-3 font-medium tracking-widest text-right">過ち</th>
+                        </tr>
+                    </thead>
+                    <tbody id="stats-history-list" class="divide-y divide-rydeen-border text-rydeen-text font-mono">
+                        <!-- JS populated -->
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="mt-6 pt-4 flex justify-between items-center text-xs">
+                <button id="btn-clear-stats" class="text-rydeen-danger hover:text-red-400 transition flex items-center gap-2 font-medium tracking-widest">
+                    <i class="fa-regular fa-trash-can"></i> 記録を抹消する
+                </button>
+                <span class="text-rydeen-muted tracking-widest">記録は端末内に保存されています</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- AUDIO SYNTH (Web Audio API) -->
+    <script>
+        class SoundFX {
+            constructor() {
+                this.ctx = null;
+                this.enabled = true;
+                this.bgmAudio = document.getElementById('bgm-audio');
+                this.bgmAudio.volume = 0.15; // default volume
+            }
+
+            init() {
+                if (!this.ctx) {
+                    const AudioContext = window.AudioContext || window.webkitAudioContext;
+                    if (AudioContext) {
+                        this.ctx = new AudioContext();
+                        this.startBGM(); // Start BGM on first user interaction
+                    }
+                } else if (this.ctx.state === 'suspended') {
+                    this.ctx.resume();
+                }
+            }
+
+            startBGM() {
+                if (this.bgmAudio.paused) {
+                    this.bgmAudio.play().catch(e => console.log('BGM Play Error:', e));
+                }
+            }
+
+            setBGMVolume(val) {
+                // val is 0 to 100
+                const normalized = val / 100;
+                this.bgmAudio.volume = normalized;
+                
+                // Initialize audio context if user adjusts volume before interacting elsewhere
+                if (val > 0 && this.bgmAudio.paused) {
+                    this.init();
+                }
+            }
+
+            playCorrect() {
+                if (!this.enabled) return;
+                this.init();
+                if (!this.ctx) return;
+
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+
+                // 落ち着いたマリンバや琴のような短い音を模倣
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(523.25, now); // C5
+                osc.frequency.exponentialRampToValueAtTime(1046.50, now + 0.05); // C6
+
+                gain.gain.setValueAtTime(0.1, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+
+                osc.start(now);
+                osc.stop(now + 0.15);
+            }
+
+            playWrong() {
+                if (!this.enabled) return;
+                this.init();
+                if (!this.ctx) return;
+
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+
+                // 低い鈍い音
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(120, now);
+                osc.frequency.exponentialRampToValueAtTime(80, now + 0.2);
+
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.2);
+
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+
+                osc.start(now);
+                osc.stop(now + 0.2);
+            }
+
+            playComplete() {
+                if (!this.enabled) return;
+                this.init();
+                if (!this.ctx) return;
+
+                const notes = [523.25, 659.25, 783.99, 1046.50]; // 和音的な響き
+                notes.forEach((freq, idx) => {
+                    const now = this.ctx.currentTime + (idx * 0.1);
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(freq, now);
+
+                    gain.gain.setValueAtTime(0.15, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+
+                    osc.start(now);
+                    osc.stop(now + 0.5);
+                });
+            }
+        }
+
+        const soundFX = new SoundFX();
+    </script>
+
+    <!-- MAIN APP LOGIC -->
+    <script>
+        // State Management
+        const state = {
+            op: 'add',        // add, sub, mul, div_int, div_float
+            digits: 1,        // 1, 2, 3
+            matrixSize: 10,   // 3, 5, 10
+            rowHeader: [],
+            colHeader: [],
+            answers: [],      // 2D matrix of correct answers (numbers)
+            userState: [],    // 2D status: { answered: bool }
+            
+            // Stats
+            startTime: null,
+            timerInterval: null,
+            elapsedMs: 0,
+            errorCount: 0,
+            completedCells: 0,
+            isActive: false,
+
+            // History
+            history: []
+        };
+
+        // DOM References
+        const elements = {
+            configPanel: document.getElementById('config-panel'),
+            hudPanel: document.getElementById('hud-panel'),
+            gridPlaceholder: document.getElementById('grid-placeholder'),
+            matrixWrapper: document.getElementById('matrix-wrapper'),
+            matrixTable: document.getElementById('matrix-table'),
+            
+            btnStart: document.getElementById('btn-start'),
+            btnReset: document.getElementById('btn-reset'),
+            
+            // GiveUp Custom Modal
+            btnGiveup: document.getElementById('btn-giveup'),
+            giveupModal: document.getElementById('giveup-modal'),
+            btnGiveupCancel: document.getElementById('btn-giveup-cancel'),
+            btnGiveupConfirm: document.getElementById('btn-giveup-confirm'),
+
+            btnSoundToggle: document.getElementById('btn-sound-toggle'),
+            soundIcon: document.getElementById('sound-icon'),
+            bgmVolume: document.getElementById('bgm-volume'),
+
+            hudProgress: document.getElementById('hud-progress'),
+            hudTotalCells: document.getElementById('hud-total-cells'),
+            hudErrors: document.getElementById('hud-errors'),
+            hudTimer: document.getElementById('hud-timer'),
+            hudProgressBar: document.getElementById('hud-progress-bar'),
+            hudModeBadge: document.getElementById('hud-mode-badge'),
+            hudHintBadge: document.getElementById('hud-hint-badge'),
+
+            // Modals
+            resultModal: document.getElementById('result-modal'),
+            resultRank: document.getElementById('result-rank'),
+            resultTime: document.getElementById('result-time'),
+            resultErrors: document.getElementById('result-errors'),
+            resultAvgSpeed: document.getElementById('result-avg-speed'),
+            btnResultRetry: document.getElementById('btn-result-retry'),
+            btnResultClose: document.getElementById('btn-result-close'),
+
+            statsModal: document.getElementById('stats-modal'),
+            btnStatsModal: document.getElementById('btn-stats-modal'),
+            btnStatsClose: document.getElementById('btn-stats-close'),
+            btnClearStats: document.getElementById('btn-clear-stats'),
+            statsHistoryList: document.getElementById('stats-history-list'),
+            statsChartCanvas: document.getElementById('stats-chart')
+        };
+
+        let chartInstance = null;
+
+        // Load History from LocalStorage
+        function loadHistory() {
+            try {
+                const saved = localStorage.getItem('math_matrix_history_v2');
+                if (saved) {
+                    state.history = JSON.parse(saved);
+                }
+            } catch(e) {
+                state.history = [];
+            }
+        }
+
+        function saveHistory() {
+            try {
+                localStorage.setItem('math_matrix_history_v2', JSON.stringify(state.history));
+            } catch(e){}
+        }
+
+        // Setup Event Listeners
+        function initEvents() {
+            // Option Buttons (Operation)
+            document.querySelectorAll('.op-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.op-btn').forEach(b => {
+                        b.classList.remove('active', 'border-rydeen-gold', 'bg-rydeen-surface_light', 'text-rydeen-gold');
+                        b.classList.add('border-rydeen-border', 'bg-rydeen-surface', 'text-rydeen-muted');
+                    });
+                    btn.classList.remove('border-rydeen-border', 'bg-rydeen-surface', 'text-rydeen-muted');
+                    btn.classList.add('active', 'border-rydeen-gold', 'bg-rydeen-surface_light', 'text-rydeen-gold');
+                    state.op = btn.dataset.op;
+                });
+            });
+
+            // Option Buttons (Digits)
+            document.querySelectorAll('.digit-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.digit-btn').forEach(b => {
+                        b.classList.remove('active', 'border-rydeen-gold', 'bg-rydeen-surface_light', 'text-rydeen-gold');
+                        b.classList.add('border-rydeen-border', 'bg-rydeen-surface', 'text-rydeen-muted');
+                    });
+                    btn.classList.remove('border-rydeen-border', 'bg-rydeen-surface', 'text-rydeen-muted');
+                    btn.classList.add('active', 'border-rydeen-gold', 'bg-rydeen-surface_light', 'text-rydeen-gold');
+                    state.digits = parseInt(btn.dataset.digits);
+                });
+            });
+
+            // Option Buttons (Size)
+            document.querySelectorAll('.size-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.size-btn').forEach(b => {
+                        b.classList.remove('active', 'border-rydeen-gold', 'bg-rydeen-surface_light', 'text-rydeen-gold');
+                        b.classList.add('border-rydeen-border', 'bg-rydeen-surface', 'text-rydeen-muted');
+                    });
+                    btn.classList.remove('border-rydeen-border', 'bg-rydeen-surface', 'text-rydeen-muted');
+                    btn.classList.add('active', 'border-rydeen-gold', 'bg-rydeen-surface_light', 'text-rydeen-gold');
+                    state.matrixSize = parseInt(btn.dataset.size);
+                });
+            });
+
+            // Action Buttons
+            elements.btnStart.addEventListener('click', startExercise);
+            elements.btnReset.addEventListener('click', startExercise);
+            
+            // Give Up flow without confirm()
+            elements.btnGiveup.addEventListener('click', () => {
+                elements.giveupModal.classList.remove('hidden');
+            });
+            elements.btnGiveupCancel.addEventListener('click', () => {
+                elements.giveupModal.classList.add('hidden');
+            });
+            elements.btnGiveupConfirm.addEventListener('click', () => {
+                elements.giveupModal.classList.add('hidden');
+                executeGiveUp();
+            });
+
+            // Sound Toggle
+            elements.btnSoundToggle.addEventListener('click', () => {
+                soundFX.enabled = !soundFX.enabled;
+                if (soundFX.enabled) {
+                    elements.soundIcon.className = 'fa-solid fa-volume-high text-lg text-rydeen-gold';
+                } else {
+                    elements.soundIcon.className = 'fa-solid fa-volume-xmark text-lg text-rydeen-muted';
+                }
+            });
+
+            // BGM Volume Slider
+            elements.bgmVolume.addEventListener('input', (e) => {
+                soundFX.setBGMVolume(parseInt(e.target.value));
+            });
+
+            // Modals
+            elements.btnResultClose.addEventListener('click', () => {
+                elements.resultModal.classList.add('hidden');
+                // 陣地（ホーム）へ戻る
+                elements.hudPanel.classList.add('hidden');
+                elements.matrixWrapper.classList.add('hidden');
+                elements.gridPlaceholder.classList.remove('hidden');
+                elements.configPanel.classList.remove('hidden');
+            });
+            elements.btnResultRetry.addEventListener('click', () => {
+                elements.resultModal.classList.add('hidden');
+                startExercise();
+            });
+
+            elements.btnStatsModal.addEventListener('click', openStatsModal);
+            elements.btnStatsClose.addEventListener('click', () => elements.statsModal.classList.add('hidden'));
+            elements.btnClearStats.addEventListener('click', () => {
+                // Use a custom modal for this as well in production, but for simplicity here we keep confirm or just clear directly with a short delay.
+                // Let's implement a simple direct clear with visual feedback since confirm() is banned.
+                state.history = [];
+                saveHistory();
+                renderHistoryTable();
+                renderChart();
+                
+                const btn = elements.btnClearStats;
+                const originalText = btn.innerHTML;
+                btn.innerHTML = '<i class="fa-solid fa-check"></i> 抹消しました';
+                btn.classList.replace('text-rydeen-danger', 'text-rydeen-gold');
+                setTimeout(() => {
+                    btn.innerHTML = originalText;
+                    btn.classList.replace('text-rydeen-gold', 'text-rydeen-danger');
+                }, 2000);
+            });
+        }
+
+        // Helper to generate array of random numbers based on digits
+        function generateNumbers(count, digits, op, isCol = false) {
+            // 1桁で要素数10(つまり10マス計算の全て)の場合は重複なしの0〜9を生成
+            if (digits === 1 && count === 10) {
+                let pool = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+                
+                // 割り算の列（割る数）の場合は0除算を防ぐため 1〜10 にする
+                if ((op === 'div_int' || op === 'div_float') && isCol) {
+                    pool = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+                }
+
+                // 配列をシャッフル
+                for (let i = pool.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [pool[i], pool[j]] = [pool[j], pool[i]];
+                }
+                return pool;
+            }
+
+            const numbers = [];
+            let min = 1;
+            let max = 9;
+
+            if (digits === 1) {
+                min = ((op === 'div_int' || op === 'div_float') && isCol) ? 1 : 0;
+            } else if (digits === 2) {
+                min = 10;
+                max = 99;
+            } else if (digits === 3) {
+                min = 100;
+                max = 999;
+            }
+
+            for (let i = 0; i < count; i++) {
+                let val = Math.floor(Math.random() * (max - min + 1)) + min;
+                numbers.push(val);
+            }
+            return numbers;
+        }
+
+        // Get Expected Answer for Cell (Returns String)
+        function getExpectedAnswer(r, c) {
+            const left = state.rowHeader[r];
+            const top = state.colHeader[c];
+            
+            if (state.op === 'add') return String(left + top);
+            if (state.op === 'sub') return String(left - top);
+            if (state.op === 'mul') return String(left * top);
+            if (state.op === 'div_int') return String(left); 
+            if (state.op === 'div_float') {
+                // 完全に割り切れる場合はそのままの整数
+                if (left % top === 0) {
+                    return String(left / top);
+                } else {
+                    // 小数第2位まで(四捨五入)求め、小数点を抜いた文字列にする
+                    const val = Math.round((left / top) * 100) / 100;
+                    return String(val).replace('.', '');
+                }
+            }
+            return "0";
+        }
+
+        // Start Exercise Logic
+        function startExercise() {
+            soundFX.init();
+
+            state.completedCells = 0;
+            state.errorCount = 0;
+            state.elapsedMs = 0;
+            state.isActive = true;
+
+            const size = state.matrixSize;
+            const digits = state.digits;
+            const op = state.op;
+
+            // Generate Headers
+            state.colHeader = generateNumbers(size, digits, op, true);
+            state.rowHeader = generateNumbers(size, digits, op, false);
+
+            // Calculate Answers matrix and Setup User State
+            state.answers = [];
+            state.userState = [];
+
+            for (let r = 0; r < size; r++) {
+                const rowAns = [];
+                const rowSt = [];
+                for (let c = 0; c < size; c++) {
+                    rowAns.push(getExpectedAnswer(r, c));
+                    rowSt.push({ answered: false });
+                }
+                state.answers.push(rowAns);
+                state.userState.push(rowSt);
+            }
+
+            // Render HUD
+            elements.hudProgress.textContent = '0';
+            elements.hudTotalCells.textContent = `/ ${size * size}`;
+            elements.hudErrors.textContent = '0';
+            elements.hudProgressBar.style.width = '0%';
+            
+            const opLabelMap = {
+                add: '足し算 (+)',
+                sub: '引き算 (-)',
+                mul: '掛け算 (×)',
+                div_int: '割り算 (整)',
+                div_float: '割り算 (小数)'
+            };
+            elements.hudModeBadge.textContent = `${size * size}マス / ${digits}桁 / ${opLabelMap[op]}`;
+            
+            if (op === 'div_float') {
+                elements.hudHintBadge.classList.remove('hidden');
+            } else {
+                elements.hudHintBadge.classList.add('hidden');
+            }
+
+            // Switch Panels
+            elements.configPanel.classList.add('hidden');
+            elements.hudPanel.classList.remove('hidden');
+            elements.gridPlaceholder.classList.add('hidden');
+            elements.matrixWrapper.classList.remove('hidden');
+
+            // Render Table
+            buildMatrixDOM();
+
+            // Start Timer
+            if (state.timerInterval) clearInterval(state.timerInterval);
+            state.startTime = Date.now();
+            state.timerInterval = setInterval(updateTimer, 50);
+
+            // Focus First Input Cell
+            setTimeout(() => {
+                const firstCell = document.querySelector('input[data-row="0"][data-col="0"]');
+                if (firstCell) firstCell.focus();
+            }, 100);
+        }
+
+        // Build Table DOM
+        function buildMatrixDOM() {
+            const size = state.matrixSize;
+            const opSymbolMap = { add: '+', sub: '-', mul: '×', div_int: '÷', div_float: '÷' };
+            const opSymbol = opSymbolMap[state.op];
+
+            // Adjust sizing based on matrix size & digit length
+            let cellWidthClass = "w-14 h-12 text-base";
+            if (state.digits === 2) cellWidthClass = "w-16 h-12 text-lg";
+            if (state.digits === 3) cellWidthClass = "w-20 h-14 text-xl";
+            
+            // Allow larger cells for float mode to accommodate decimals like "-100.55"
+            if (state.op === 'div_float' && state.digits > 1) cellWidthClass = "w-24 h-14 text-lg";
+
+            let html = '<thead><tr>';
+            // Top-left Operator Header Cell
+            html += `<th class="p-2 border border-rydeen-gold bg-rydeen-bg text-rydeen-gold font-bold text-2xl text-center ${cellWidthClass}">${opSymbol}</th>`;
+
+            // Column Headers
+            for (let c = 0; c < size; c++) {
+                html += `<th class="p-2 border border-rydeen-border bg-rydeen-surface_light text-rydeen-text font-bold text-center font-mono ${cellWidthClass}">${state.colHeader[c]}</th>`;
+            }
+            html += '</tr></thead><tbody>';
+
+            // Rows
+            for (let r = 0; r < size; r++) {
+                html += '<tr>';
+                // Row Header
+                html += `<td class="p-2 border border-rydeen-border bg-rydeen-surface_light text-rydeen-text font-bold text-center font-mono ${cellWidthClass}">${state.rowHeader[r]}</td>`;
+
+                // Inputs
+                for (let c = 0; c < size; c++) {
+                    const isDivInt = state.op === 'div_int';
+                    const displayProblem = isDivInt ? `${state.rowHeader[r] * state.colHeader[c]}÷${state.colHeader[c]}` : '';
+                    
+                    html += `
+                        <td class="border border-rydeen-border bg-rydeen-bg p-0 relative group">
+                            ${isDivInt ? `<span class="absolute top-0.5 left-1 text-[9px] text-rydeen-gold/70 font-mono select-none">${displayProblem}</span>` : ''}
+                            <input type="text" 
+                                data-row="${r}" 
+                                data-col="${c}" 
+                                class="cell-input w-full h-full text-center font-mono font-bold text-rydeen-text bg-transparent ${isDivInt ? 'pt-3' : ''}" 
+                                autocomplete="off"
+                                inputmode="numeric"
+                            />
+                        </td>
+                    `;
+                }
+                html += '</tr>';
+            }
+            html += '</tbody>';
+
+            elements.matrixTable.innerHTML = html;
+
+            // Bind Cell Input Listener
+            document.querySelectorAll('.cell-input').forEach(input => {
+                input.addEventListener('keydown', handleCellKeyDown);
+                input.addEventListener('input', handleCellInput);
+            });
+        }
+
+        // Timer Update
+        function updateTimer() {
+            if (!state.isActive) return;
+            state.elapsedMs = Date.now() - state.startTime;
+            
+            const totalSec = state.elapsedMs / 1000;
+            const mins = Math.floor(totalSec / 60);
+            const secs = Math.floor(totalSec % 60);
+            const tenths = Math.floor((state.elapsedMs % 1000) / 100);
+
+            const mStr = String(mins).padStart(2, '0');
+            const sStr = String(secs).padStart(2, '0');
+
+            elements.hudTimer.textContent = `${mStr}:${sStr}.${tenths}`;
+        }
+
+        // Cell Key Logic
+        function handleCellKeyDown(e) {
+            if (!state.isActive) return;
+
+            const input = e.target;
+            const r = parseInt(input.dataset.row);
+            const c = parseInt(input.dataset.col);
+
+            if (e.key === 'ArrowRight') {
+                e.preventDefault();
+                moveFocus(r, c + 1);
+            } else if (e.key === 'ArrowLeft') {
+                e.preventDefault();
+                moveFocus(r, c - 1);
+            } else if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                moveFocus(r + 1, c);
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                moveFocus(r - 1, c);
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                
+                // On Enter, strictly validate whatever is in the field
+                const valStr = input.value.trim();
+                if (valStr !== '') {
+                    const expectedStr = state.answers[r][c];
+                    const isCorrect = (valStr === expectedStr);
+                    processCellResult(r, c, input, isCorrect);
+                }
+            }
+        }
+
+        // Auto-Check Logic for Input
+        function handleCellInput(e) {
+            if (!state.isActive) return;
+
+            const input = e.target;
+            const r = parseInt(input.dataset.row);
+            const c = parseInt(input.dataset.col);
+            const valStr = input.value.trim();
+
+            if (valStr === '') return;
+            if (valStr === '-') return; // 負の符号のみの場合は待機
+
+            const expectedStr = state.answers[r][c];
+
+            // 完全に一致したら正解
+            if (valStr === expectedStr) {
+                processCellResult(r, c, input, true);
+                return;
+            }
+
+            // 前方一致チェック：間違った文字を打った瞬間に即座にエラーにする
+            if (!expectedStr.startsWith(valStr)) {
+                processCellResult(r, c, input, false);
+            }
+        }
+
+        // Process validation result
+        function processCellResult(r, c, input, isCorrect) {
+            if (state.userState[r][c].answered) {
+                moveToNextCell(r, c);
+                return;
+            }
+
+            if (isCorrect) {
+                soundFX.playCorrect();
+                state.userState[r][c].answered = true;
+                state.completedCells++;
+
+                input.classList.add('cell-correct');
+                input.readOnly = true;
+
+                // Update HUD Progress
+                const total = state.matrixSize * state.matrixSize;
+                elements.hudProgress.textContent = state.completedCells;
+                elements.hudProgressBar.style.width = `${(state.completedCells / total) * 100}%`;
+
+                // Check Completion
+                if (state.completedCells >= total) {
+                    finishExercise();
+                } else {
+                    moveToNextCell(r, c);
+                }
+            } else {
+                soundFX.playWrong();
+                state.errorCount++;
+                elements.hudErrors.textContent = state.errorCount;
+
+                // Shake animation
+                input.classList.remove('cell-wrong-shake');
+                void input.offsetWidth; // trigger reflow
+                input.classList.add('cell-wrong-shake');
+
+                // Clear value after brief delay, maintain focus
+                setTimeout(() => {
+                    input.value = '';
+                    input.classList.remove('cell-wrong-shake');
+                }, 400);
+            }
+        }
+
+        function moveToNextCell(r, c) {
+            const size = state.matrixSize;
+            let nextR = r;
+            let nextC = c + 1;
+
+            if (nextC >= size) {
+                nextC = 0;
+                nextR = r + 1;
+            }
+
+            if (nextR < size) {
+                moveFocus(nextR, nextC);
+            } else {
+                if(document.activeElement) document.activeElement.blur();
+            }
+        }
+
+        function moveFocus(r, c) {
+            const size = state.matrixSize;
+            if (r >= 0 && r < size && c >= 0 && c < size) {
+                const targetCell = document.querySelector(`input[data-row="${r}"][data-col="${c}"]`);
+                if (targetCell && !targetCell.readOnly) {
+                    targetCell.focus();
+                    targetCell.select();
+                } else if (targetCell && targetCell.readOnly) {
+                    // Skip already answered cells (useful for manual navigation)
+                    // (Optional enhancement, left simple for now)
+                }
+            }
+        }
+
+        // Finish Exercise
+        function finishExercise() {
+            state.isActive = false;
+            clearInterval(state.timerInterval);
+
+            soundFX.playComplete();
+
+            const timeFormatted = elements.hudTimer.textContent;
+            const totalSec = state.elapsedMs / 1000;
+            const totalCells = state.matrixSize * state.matrixSize;
+            const avgSpeed = totalSec / totalCells;
+
+            // Determine Rank based on average speed (seconds per cell)
+            let rank = "初心者";
+            if (avgSpeed <= 0.2) rank = "Error";
+            else if (avgSpeed <= 0.4) rank = "神を超えし者";
+            else if (avgSpeed <= 0.6) rank = "神の領域";
+            else if (avgSpeed <= 0.8) rank = "魔王";
+            else if (avgSpeed <= 1.0) rank = "影の実力者";
+            else if (avgSpeed <= 1.5) rank = "古の勇者";
+            else if (avgSpeed <= 2.0) rank = "無自覚の英雄";
+            else if (avgSpeed <= 3.0) rank = "只者ではない";
+
+            // Populate Result Modal
+            elements.resultRank.textContent = rank;
+            elements.resultTime.textContent = timeFormatted;
+            elements.resultErrors.textContent = `${state.errorCount}`;
+            elements.resultAvgSpeed.textContent = `${avgSpeed.toFixed(2)} 秒`;
+
+            // Save to History
+            const record = {
+                id: Date.now(),
+                date: new Date().toLocaleDateString('ja-JP', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }),
+                op: state.op,
+                digits: state.digits,
+                size: state.matrixSize,
+                timeStr: timeFormatted,
+                timeMs: state.elapsedMs,
+                errors: state.errorCount
+            };
+            state.history.unshift(record);
+            saveHistory();
+
+            // Display Result Modal
+            setTimeout(() => {
+                elements.resultModal.classList.remove('hidden');
+            }, 500);
+        }
+
+        // Actual Give Up execution
+        function executeGiveUp() {
+            state.isActive = false;
+            clearInterval(state.timerInterval);
+            
+            elements.hudPanel.classList.add('hidden');
+            elements.matrixWrapper.classList.add('hidden');
+            elements.gridPlaceholder.classList.remove('hidden');
+            elements.configPanel.classList.remove('hidden');
+        }
+
+        // Render Stats Modal & Chart
+        function openStatsModal() {
+            renderHistoryTable();
+            renderChart();
+            elements.statsModal.classList.remove('hidden');
+        }
+
+        function renderHistoryTable() {
+            if (state.history.length === 0) {
+                elements.statsHistoryList.innerHTML = '<tr><td colspan="4" class="p-6 text-center text-rydeen-muted text-sm tracking-widest border-b border-rydeen-border">記録が存在しません。</td></tr>';
+                return;
+            }
+
+            const opMap = { add: '+', sub: '-', mul: '×', div_int: '÷整', div_float: '÷小' };
+            
+            let html = '';
+            state.history.slice(0, 15).forEach(rec => {
+                html += `
+                    <tr class="hover:bg-rydeen-surface_light transition">
+                        <td class="p-3 text-rydeen-muted">${rec.date}</td>
+                        <td class="p-3">
+                            <span class="px-2 py-1 bg-rydeen-bg border border-rydeen-border text-rydeen-text text-xs tracking-wider">
+                                ${rec.size * rec.size}マス / ${rec.digits}桁 (${opMap[rec.op]})
+                            </span>
+                        </td>
+                        <td class="p-3 text-right font-bold text-rydeen-gold">${rec.timeStr}</td>
+                        <td class="p-3 text-right text-rydeen-danger">${rec.errors}</td>
+                    </tr>
+                `;
+            });
+            elements.statsHistoryList.innerHTML = html;
+        }
+
+        function renderChart() {
+            const ctx = elements.statsChartCanvas.getContext('2d');
+            
+            const recent = state.history.slice(0, 10).reverse();
+            const labels = recent.map(r => r.date.split(' ')[0]);
+            const dataSec = recent.map(r => (r.timeMs / 1000).toFixed(1));
+
+            if (chartInstance) {
+                chartInstance.destroy();
+            }
+
+            chartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels.length ? labels : ['無記録'],
+                    datasets: [{
+                        label: '所要時間 (秒)',
+                        data: dataSec.length ? dataSec : [0],
+                        borderColor: '#d4af37',
+                        backgroundColor: 'rgba(212, 175, 55, 0.15)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.2,
+                        pointBackgroundColor: '#d4af37',
+                        pointBorderColor: '#0c0c0c',
+                        pointBorderWidth: 2,
+                        pointRadius: 5,
+                        pointHoverRadius: 7
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        x: {
+                            grid: { color: '#333336' },
+                            ticks: { color: '#8a8a8e', font: { family: "'Noto Serif JP', serif", size: 10 } }
+                        },
+                        y: {
+                            grid: { color: '#333336' },
+                            ticks: { color: '#8a8a8e', font: { family: "'JetBrains Mono', monospace", size: 10 } }
+                        }
+                    }
+                }
+            });
+        }
+
+        // App Initialization
+        window.onload = () => {
+            loadHistory();
+            initEvents();
+        };
+    </script>
+</body>
+</html>
