@@ -890,7 +890,7 @@
                     if (op === 'add') {
                         expectedStr = String(left + top);
                     } else if (op === 'sub') {
-                        expectedStr = String(left - top);
+                        expectedStr = String(top - left); // 上（列）から 左（行）を引くように変更
                     } else if (op === 'mul') {
                         expectedStr = String(left * top);
                     } else if (op === 'div_exact') {
@@ -1137,9 +1137,11 @@
                 void input.offsetWidth; // trigger reflow
                 input.classList.add('cell-wrong-shake');
 
-                // Clear value after brief delay, maintain focus
+                // 間違えた瞬間にすぐ入力内容を消去し、連続誤答を防ぐ
+                input.value = '';
+
+                // アニメーション用のクラスのみ遅延して外す
                 setTimeout(() => {
-                    input.value = '';
                     input.classList.remove('cell-wrong-shake');
                 }, 400);
             }
